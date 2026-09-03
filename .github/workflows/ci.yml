@@ -63,7 +63,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          # 与本地工具链（go1.27.x）保持一致，避免 gofmt 跨版本格式差异导致 CI 误判
+          go-version: '1.27'
           cache: true
 
       - name: Download Go modules

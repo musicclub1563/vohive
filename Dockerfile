@@ -15,7 +15,7 @@ RUN npm run build
 # ---- Stage 2: cross-compile the Go binary on the native builder ----
 # go.mod requires a newer toolchain than the base image ships; GOTOOLCHAIN=auto
 # downloads it on demand.
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS go-builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS go-builder
 ENV GOTOOLCHAIN=auto
 RUN apk add --no-cache git
 WORKDIR /src
