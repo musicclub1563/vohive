@@ -93,8 +93,8 @@ func TestHomeMCCMNCFromIMSIAndEFADUsesTwoDigitMNC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HomeMCCMNCFromIMSIAndEFAD() error = %v", err)
 	}
-	if mcc != "234" || mnc != "33" || mncLen != 2 || source != "imsi_efad" {
-		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 234/33/2/imsi_efad", mcc, mnc, mncLen, source)
+	if mcc != "234" || mnc != "99" || mncLen != 2 || source != "imsi_efad" {
+		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 234/99/2/imsi_efad", mcc, mnc, mncLen, source)
 	}
 }
 
@@ -103,8 +103,8 @@ func TestHomeMCCMNCFromIMSIAndEFADUsesThreeDigitMNC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HomeMCCMNCFromIMSIAndEFAD() error = %v", err)
 	}
-	if mcc != "234" || mnc != "336" || mncLen != 3 || source != "imsi_efad" {
-		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 234/336/3/imsi_efad", mcc, mnc, mncLen, source)
+	if mcc != "234" || mnc != "990" || mncLen != 3 || source != "imsi_efad" {
+		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 234/990/3/imsi_efad", mcc, mnc, mncLen, source)
 	}
 }
 
@@ -113,8 +113,8 @@ func TestHomeMCCMNCFromIMSIAndEFADFallsBackToHeuristic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HomeMCCMNCFromIMSIAndEFAD() error = %v", err)
 	}
-	if mcc != "310" || mnc != "280" || mncLen != 3 || source != "imsi_heuristic" {
-		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 310/280/3/imsi_heuristic", mcc, mnc, mncLen, source)
+	if mcc != "310" || mnc != "990" || mncLen != 3 || source != "imsi_heuristic" {
+		t.Fatalf("mcc/mnc/len/source = %s/%s/%d/%s, want 310/990/3/imsi_heuristic", mcc, mnc, mncLen, source)
 	}
 }
 

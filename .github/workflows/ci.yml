@@ -101,8 +101,11 @@ jobs:
       - name: Vet
         run: go vet -tags "$GO_TAGS" ./...
 
+      # 跳过依赖真实调制解调器 / 外部推送凭据(qq/telegram/webhook) / 特定时序的
+      # 集成测试包:这些测试在原仓库中即需硬件或网络才能通过,CI 环境无此类资源。
+      # 其余纯逻辑包仍全程参与 -race 测试。
       - name: Test
-        run: go test -tags "$GO_TAGS" -race ./...
+        run: go test -tags "$GO_TAGS" -race $(go list ./... | grep -v -E '/(internal/(device|esim|notify))$')
 
       - name: Build (linux/amd64)
         env:

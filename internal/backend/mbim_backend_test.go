@@ -121,7 +121,7 @@ func TestMBIMBackendGetNativeMCCMNCUsesHomeProviderLength(t *testing.T) {
 }
 
 // 真机场景:HomeProvider 拿不到、USIM ADF 也开不了(EF_AD 读失败),
-// 仍应靠 IMSI+MCC 表得到正确的 3 位 MNC(310→280),而不是截成 2 位。
+// 退回 IMSI 推导:MCC 表确定 MNC 长度为 3 位,再从 IMSI 取真实 MNC(310990... → 990)。
 func TestMBIMBackendGetNativeMCCMNCUsesMCCTableWhenNoHomeProviderNoEFAD(t *testing.T) {
 	src := &fakeMBIMSource{
 		sub:             mbim.SubscriberReady{IMSI: "310990000000002"},
@@ -134,8 +134,8 @@ func TestMBIMBackendGetNativeMCCMNCUsesMCCTableWhenNoHomeProviderNoEFAD(t *testi
 	if err != nil {
 		t.Fatalf("GetNativeMCCMNC: %v", err)
 	}
-	if mcc != "310" || mnc != "280" {
-		t.Fatalf("GetNativeMCCMNC = (%q,%q), want (310,280)", mcc, mnc)
+	if mcc != "310" || mnc != "990" {
+		t.Fatalf("GetNativeMCCMNC = (%q,%q), want (310,990)", mcc, mnc)
 	}
 }
 
