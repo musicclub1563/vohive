@@ -17,7 +17,7 @@ VoHive 把模组热插拔管理、SOCKS5/HTTP 代理编排、短信收发、VoWi
 | 通信与短信中心 | 统一界面/API 处理 AT 短信收发、会话与联系人管理、USSD 交互,短信落库可查 |
 | eSIM 管理 | 通过 AT 指令通道直接管理 eSIM 芯片,支持 Profile 下载、启用/停用、重命名、删除 |
 | 全渠道通知 | 重要短信及系统告警可推送至 Telegram、Email、PushPlus、Bark、飞书(Lark/Feishu)、QQ 等 |
-| 多架构构建 | 原生支持 amd64 / arm64 / arm7 跨平台编译,路由器到边缘节点均可部署 |
+| 多架构构建 | 原生支持 amd64 / arm64 / armv7 跨平台编译,路由器到边缘节点均可部署 |
 
 ## 典型应用场景
 
@@ -39,8 +39,8 @@ VoHive 把模组热插拔管理、SOCKS5/HTTP 代理编排、短信收发、VoWi
 以 root 在新装 Linux 主机上执行,脚本会自动检测架构、从 GitHub Release 下载对应 `tar.xz` 并注册为 systemd 服务:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts/install.sh | sudo bash
-# 指定版本: VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts/install.sh)
+curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/install.sh | sudo bash
+# 指定版本: VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/install.sh)
 ```
 
 安装后访问 `http://<本机 IP>:7575`,默认账号 `admin` / `admin123`,**请立即修改密码**。
@@ -52,7 +52,10 @@ curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts
 | 平台 | Release 文件 |
 | --- | --- |
 | Linux x86-64 | `vohive-linux-amd64.tar.xz` |
-| Linux ARM64 / aarch64 | `vohive-linux-arm64.tar.xz` / `vohive-linux-aarch64.tar.xz` |
+| Linux ARM64 / aarch64 | `vohive-linux-arm64.tar.xz` |
+| Linux ARMv7 (armhf) | `vohive-linux-armv7.tar.xz` |
+
+> **关于架构命名**:`aarch64` 与 `arm64` 是同一架构(均为 `GOARCH=arm64`),因此只提供一个 `vohive-linux-arm64.tar.xz`。ARMv7 设备(树莓派 2/3 32 位、部分软路由)请使用 `vohive-linux-armv7.tar.xz`(编译参数 `GOOS=linux GOARCH=arm GOARM=7`)。
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing

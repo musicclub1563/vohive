@@ -1,8 +1,8 @@
 name: Build Release Binaries
 
 # 与 VoCat 发布配方对齐:
-#   - 资产命名为 <name>-linux-<arch>(无版本号),支持 386/amd64/arm64/aarch64/armv7
-#   - aarch64 与 arm64 同为 GOARCH=arm64 编译,仅文件名不同(对应内核 uname -m 习惯)
+#   - 资产命名为 <name>-linux-<arch>(无版本号),支持 amd64/arm64/armv7
+#   - 注:aarch64 与 arm64 为同一架构(GOARCH=arm64),仅保留 arm64 一种发行物
 on:
   push:
     tags:
@@ -92,10 +92,10 @@ jobs:
             goarch: arm64
             goarm: ""
             filename: vohive-linux-arm64
-          - target: linux-aarch64
-            goarch: arm64
-            goarm: ""
-            filename: vohive-linux-aarch64
+          - target: linux-armv7
+            goarch: arm
+            goarm: "7"
+            filename: vohive-linux-armv7
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -172,7 +172,7 @@ jobs:
     needs: binaries
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -187,11 +187,12 @@ jobs:
 
       - name: Create or update GitHub Release
         run: |
-          if gh release view "$GITHUB_REF_NAME" --repo "musicclub1563/vohive-release" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --repo "musicclub1563/vohive-release" --clobber
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$GITHUB_REF_NAME" dist/* \
-              --repo "musicclub1563/vohive-release" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
               --title "$GITHUB_REF_NAME" \
               --generate-notes
           fi

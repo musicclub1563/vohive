@@ -4,16 +4,16 @@
 #
 # 用法:
 #   1) 远程一键安装(自动检测架构,从 GitHub Release 下载对应 tar.xz 并安装为 systemd 服务):
-#        curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive-release/main/scripts/install.sh | sudo bash
-#      指定版本:  VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive-release/main/scripts/install.sh)
-#      私有仓库: 需附带令牌,GITHUB_TOKEN=ghp_xxx VOHIVE_VERSION=v0.1.1 sudo bash <(curl ...)
+#        curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/install.sh | sudo bash
+#      指定版本:  VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/install.sh)
+#      限速/私有部署: 可附带令牌,GITHUB_TOKEN=ghp_xxx VOHIVE_VERSION=v0.1.1 sudo bash <(curl ...)
 #
 #   2) 本地安装(在已解压的发布包目录内执行,无需联网,适合手动分发 / 私有环境):
 #        sudo ./install.sh
 #
 set -euo pipefail
 
-REPO="${VOHIVE_REPO:-musicclub1563/vohive-release}"
+REPO="${VOHIVE_REPO:-musicclub1563/vohive}"
 VERSION="${VOHIVE_VERSION:-latest}"
 
 BIN_DIR="/opt/vohive/bin"
@@ -111,8 +111,9 @@ UNIT
 detect_arch() {
   case "$(uname -m)" in
     x86_64|amd64)     echo "amd64" ;;
-    aarch64|arm64)    echo "aarch64" ;;
-    *) die "不支持的架构: $(uname -m)(仅支持 amd64 / arm64 / aarch64)" ;;
+    aarch64|arm64)    echo "arm64" ;;
+    armv7l|armhf)     echo "armv7" ;;
+    *) die "不支持的架构: $(uname -m)(仅支持 amd64 / arm64 / armv7)" ;;
   esac
 }
 
