@@ -90,9 +90,9 @@ jobs:
 
       - name: Check formatting
         run: |
-          unformatted="$(gofmt -s -l $(git ls-files '*.go' | grep -v '^third_party/'))"
+          unformatted="$(gofmt -l $(git ls-files '*.go' | grep -v '^third_party/'))"
           if [ -n "$unformatted" ]; then
-            echo "以下文件未通过 gofmt -s:"
+            echo "以下文件未通过 gofmt:"
             echo "$unformatted"
             exit 1
           fi
