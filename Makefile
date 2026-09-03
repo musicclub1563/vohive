@@ -14,9 +14,10 @@ PKG_LIST ?= ./...
 LDFLAGS = -s -w -X '$(MODULE)/internal/global.Version=$(VERSION_TAG)' -X '$(MODULE)/internal/global.BuildTime=$(BUILD_TIME)'
 GO_BUILD = go build -trimpath -buildvcs=false -tags "$(GO_TAGS)" -ldflags "$(LDFLAGS)"
 
-AMD64_OUT = $(DIST_DIR)/$(BINARY_NAME)_$(VERSION_TAG)_linux_amd64
-ARM64_OUT = $(DIST_DIR)/$(BINARY_NAME)_$(VERSION_TAG)_linux_arm64
-ARMV7_OUT = $(DIST_DIR)/$(BINARY_NAME)_$(VERSION_TAG)_linux_armv7
+# 本地产物命名与 CI 发布对齐:vohive-linux-<arch>(不含版本号,版本由 ldflags 注入)
+AMD64_OUT = $(DIST_DIR)/$(BINARY_NAME)-linux-amd64
+ARM64_OUT = $(DIST_DIR)/$(BINARY_NAME)-linux-arm64
+ARMV7_OUT = $(DIST_DIR)/$(BINARY_NAME)-linux-armv7
 UPX ?= $(shell command -v upx || command -v upx-ucl)
 UPX_FLAGS ?= --best --lzma
 

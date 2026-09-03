@@ -146,15 +146,23 @@ func ApplyUpdate() error {
 		return fmt.Errorf("failed to decode release info: %w", err)
 	}
 
-	// 拼接对应的 asset name。例如: vohive_v1.0.0_linux_amd64
-	targetGoos := runtime.GOOS
+	// 拼接对应的 asset 名称,与 binary-release.yml 产出一致:vohive-linux-<arch>
+	// (文件名不含版本号)。runtime 的 arm64 对应 vohive-linux-arm64(aarch64 为同一
+	// GOARCH=arm64 编译的别名,自更新按 arm64 匹配即可)。
 	targetGoarch := runtime.GOARCH
-	if targetGoarch == "arm" {
-		targetGoarch = "armv7" // 根据 Makefile 中的定义，vohive 编的 arm 是 armv7
+	switch targetGoarch {
+	case "arm":
+		targetGoarch = "armv7"
+	case "386":
+		targetGoarch = "386"
+	case "amd64":
+		targetGoarch = "amd64"
+	case "arm64":
+		targetGoarch = "arm64"
 	}
 
 	binaryName := "vohive"
-	assetPrefix := fmt.Sprintf("%s_%s_%s_%s", binaryName, release.TagName, targetGoos, targetGoarch)
+	assetPrefix := fmt.Sprintf("%s-linux-%s", binaryName, targetGoarch)
 
 	var downloadURL string
 	for _, asset := range release.Assets {
@@ -165,7 +173,7 @@ func ApplyUpdate() error {
 	}
 
 	if downloadURL == "" {
-		return fmt.Errorf("no matching asset found for architecture %s_%s", targetGoos, targetGoarch)
+		return fmt.Errorf("no matching asset found for architecture linux/%s (prefix %q)", targetGoarch, assetPrefix)
 	}
 
 	logger.Info("开始下载更新", "url", downloadURL)
