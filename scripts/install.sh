@@ -132,7 +132,7 @@ run_remote_install() {
   need_cmd curl
   need_cmd tar
 
-  local arch tag url tmp pkg_dir
+  local arch tag url pkg_dir
   arch="$(detect_arch)"
   tag="$(resolve_tag)"
   url="https://github.com/$REPO/releases/download/$tag/vohive-linux-$arch.tar.xz"
