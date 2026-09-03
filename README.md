@@ -47,8 +47,6 @@ curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/i
 
 ### 预编译包(tar.xz)
 
-> 当前版本:**v0.1.3**
-
 从 [GitHub Releases](https://github.com/musicclub1563/vohive/releases) 下载对应架构的 `tar.xz` 并解压安装:
 
 | 平台 | Release 文件 |
@@ -56,8 +54,6 @@ curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/i
 | Linux x86-64 | `vohive-linux-amd64.tar.xz` |
 | Linux ARM64 / aarch64 | `vohive-linux-arm64.tar.xz` |
 | Linux ARMv7 (armhf) | `vohive-linux-armv7.tar.xz` |
-
-> **关于架构命名**:`aarch64` 与 `arm64` 是同一架构(均为 `GOARCH=arm64`),因此只提供一个 `vohive-linux-arm64.tar.xz`。ARMv7 设备(树莓派 2/3 32 位、部分软路由)请使用 `vohive-linux-armv7.tar.xz`(编译参数 `GOOS=linux GOARCH=arm GOARM=7`)。
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
