@@ -9,7 +9,7 @@
 ```bash
 mkdir -p vohive/{config,data,logs}
 cd vohive
-curl -fsSL https://raw.githubusercontent.com/1239t/vohive/master/docker-compose.hub.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/docker-compose.hub.yml -o docker-compose.yml
 ```
 
 首次启动会在 `./config` 下自动生成 `config.yaml`（由入口脚本从示例配置复制），之后可直接在宿主机编辑并重启容器生效。
@@ -36,8 +36,8 @@ docker compose logs -f
 
 | 标签 | 说明 |
 |------|------|
-| `ghcr.io/1239t/vohive:latest` | 最新稳定版 |
-| `ghcr.io/1239t/vohive:<version>` | 指定版本号（如 `v1.0.0`） |
+| `ghcr.io/musicclub1563/vohive:latest` | 最新稳定版 |
+| `ghcr.io/musicclub1563/vohive:<version>` | 指定版本号（如 `1.0.0`） |
 
 多架构 manifest 覆盖 `linux/amd64` 与 `linux/arm64`；需要 `armv7` 请使用 Release 二进制。
 

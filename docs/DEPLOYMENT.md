@@ -12,7 +12,7 @@
 ```bash
 mkdir -p vohive/{config,data,logs}
 cd vohive
-curl -fsSL https://raw.githubusercontent.com/1239t/vohive/master/docker-compose.hub.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/docker-compose.hub.yml -o docker-compose.yml
 docker compose up -d
 docker compose logs -f
 ```
@@ -27,7 +27,7 @@ docker compose logs -f
 从源码构建镜像：
 
 ```bash
-git clone https://github.com/1239t/vohive.git
+git clone https://github.com/musicclub1563/vohive.git
 cd vohive
 docker compose up -d --build   # 使用仓库根目录的 docker-compose.yml
 # 或
@@ -36,25 +36,24 @@ make docker-build
 
 ## 二进制 + systemd
 
+推荐直接使用一键安装脚本（自动检测架构、下载对应 `tar.xz` 并注册 systemd 服务）：
+
 ```bash
-# 1. 下载并校验
+curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts/install.sh | sudo bash
+```
+
+如需手动部署，从 [Releases](https://github.com/musicclub1563/vohive/releases) 下载 `vohive-linux-<arch>.tar.xz` 并解压安装：
+
+```bash
 sha256sum -c SHA256SUMS --ignore-missing
-
-# 2. 安装
-sudo install -d -m 0755 /opt/vohive/bin /opt/vohive/data /opt/vohive/logs /etc/vohive
-sudo install -m 0755 vohive_vX.Y.Z_linux_amd64 /opt/vohive/bin/vohive
-sudo cp config/config.example.yaml /etc/vohive/config.yaml
-sudo chmod 0600 /etc/vohive/config.yaml
-
-# 3. 安装服务单元
-sudo cp packaging/systemd/vohive.service /etc/systemd/system/vohive.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now vohive
-sudo systemctl status vohive
+tar -xJf vohive-linux-amd64.tar.xz
+cd vohive-linux-amd64
+sudo ./install.sh            # 本地安装模式：复制二进制、生成配置、注册并启动 systemd 服务
 ```
 
 服务单元要点：
 
+- 源码见 `packaging/systemd/vohive.service`，安装后位于 `/etc/systemd/system/vohive.service`。
 - `ExecStart=/opt/vohive/bin/vohive -c /etc/vohive/config.yaml`。
 - 通过 `EnvironmentFile=-/etc/vohive/vohive.env` 注入可选环境变量（文件不存在时忽略）。
 - 需要网卡与原始套接字能力，因此保留 `CAP_NET_ADMIN`、`CAP_NET_RAW` 且 `PrivateDevices=false`。
@@ -114,7 +113,7 @@ ip-full
 
 ## 更新
 
-- **二进制 / systemd**：Web 界面「设置 → 系统」提供更新检查与应用，或在 [Releases](https://github.com/1239t/vohive/releases) 下载新版本替换后 `systemctl restart vohive`。
+- **二进制 / systemd**：Web 界面「设置 → 系统」提供更新检查与应用，或在 [Releases](https://github.com/musicclub1563/vohive/releases) 下载新版本替换后 `systemctl restart vohive`。
   自更新会下载与当前架构匹配的产物，通过 `minio/selfupdate` 原子替换可执行文件，失败自动回滚。
 - **Docker**：容器内**不要**执行二进制热替换，请拉取新镜像后重建容器：
 

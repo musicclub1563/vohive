@@ -142,11 +142,28 @@ jobs:
             exit 1
           fi
 
+      # 打包为最终发行物:内含二进制、示例配置、systemd 单元与一键安装脚本。
+      - name: Assemble ${{ matrix.target }} package (tar.xz)
+        env:
+          PKGNAME: ${{ matrix.filename }}
+          OUTPUT: dist/${{ matrix.filename }}
+        run: |
+          set -euo pipefail
+          PKGDIR="pkg/${PKGNAME}"
+          mkdir -p "$PKGDIR"
+          cp "$OUTPUT"                         "$PKGDIR/vohive"
+          cp config/config.example.yaml        "$PKGDIR/config.example.yaml"
+          cp packaging/systemd/vohive.service  "$PKGDIR/vohive.service"
+          cp scripts/install.sh                "$PKGDIR/install.sh"
+          chmod 0755 "$PKGDIR/vohive" "$PKGDIR/install.sh"
+          tar -cJf "dist/${PKGNAME}.tar.xz" -C pkg "$PKGNAME"
+          ls -lh "dist/${PKGNAME}.tar.xz"
+
       - name: Upload ${{ matrix.target }}
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
-          path: dist/${{ matrix.filename }}
+          path: dist/${{ matrix.filename }}.tar.xz
           if-no-files-found: error
           retention-days: 1
 

@@ -874,9 +874,16 @@ func buildQMIManagerConfig(cfg config.DeviceConfig, device qmimanager.ModemDevic
 			CallbackQueueSize: 128,
 		},
 		RecoveryPolicy: qmimanager.RecoveryPolicy{
-			MaxRecoverElapsed:       90 * time.Second, // 核心恢复 90s 仍未收敛即放弃并重建 worker
-			ServiceTimeoutThreshold: 2,
-			ServiceTimeoutWindow:    3 * time.Minute,
+			// 关闭“操作超时即触发核心复位”的激进恢复。quectel-qmi-go 在 DMS/NAS/UIM 等
+			// 操作超时时，会把模组当成“已复位”而执行破坏性核心恢复并断开 QMI，对无响应/被
+			// network_disabled_preference 禁用的模组会形成“超时→复位→更超时→再复位”的死循环，
+			// 且每次复位都会重置恢复计时，导致 MaxRecoverElapsed 永远到不了、EventRecoveryExhausted
+			// 永不触发、device 层的重建/滑窗兜底也无法介入。关闭后超时仅向上返回错误，由 device
+			// 层带退避与滑窗上限的恢复逻辑接管；真实硬件复位仍走 EventModemReset 指示。
+			DisableServiceTimeoutRecovery: true,
+			MaxRecoverElapsed:             90 * time.Second, // 核心恢复 90s 仍未收敛即放弃并重建 worker
+			ServiceTimeoutThreshold:       2,
+			ServiceTimeoutWindow:          3 * time.Minute,
 		},
 		ClientOptions: ClientOptionsFromDeviceConfig(cfg),
 	}
