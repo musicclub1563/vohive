@@ -1,7 +1,7 @@
 # VoHive
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
-[![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go)](go.mod)
+[![Go](https://img.shields.io/badge/Go-1.27%2B-00ADD8?logo=go)](go.mod)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vue.js)](web/package.json)
 
 > 面向高通 4G/LTE/5G 模组（Quectel EC20/EC25/EC21/EG25/EM20 等）的综合管理与代理服务平台。
@@ -27,7 +27,7 @@ VoHive 把模组热插拔管理、SOCKS5/HTTP 代理编排、短信收发、VoWi
 
 ## 架构与技术栈
 
-- **Backend**:Go 1.26+(Gin、GORM、Viper、sipgo、euicc-go)
+- **Backend**:Go 1.27+(Gin、GORM、Viper、sipgo、euicc-go)
 - **Frontend**:Vue 3 + Vite + TailwindCSS + Element Plus
 - **Database**:SQLite(`vohive.db`)
 - **CI/CD**:GitHub Actions 自动化多架构 Docker 镜像构建与发布
@@ -46,6 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/i
 安装后访问 `http://<本机 IP>:7575`,默认账号 `admin` / `admin123`,**请立即修改密码**。
 
 ### 预编译包(tar.xz)
+
+> 当前版本:**v0.1.3**
 
 从 [GitHub Releases](https://github.com/musicclub1563/vohive/releases) 下载对应架构的 `tar.xz` 并解压安装:
 
