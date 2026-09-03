@@ -21,7 +21,7 @@ ARMV7_OUT = $(DIST_DIR)/$(BINARY_NAME)-linux-armv7
 UPX ?= $(shell command -v upx || command -v upx-ucl)
 UPX_FLAGS ?= --best --lzma
 
-.PHONY: all help build build-amd64 build-arm64 build-armv7 build-all \
+.PHONY: all help build build-amd64 build-arm64 build-all \
         frontend-install frontend-dev frontend-dist \
         test test-race cover bench vet lint fmt fmt-check tidy \
         docker-build run clean
@@ -31,7 +31,7 @@ all: build-all
 help:
 	@echo "VoHive 构建目标:"
 	@echo "  make build           构建 linux/amd64 产物 (含前端)"
-	@echo "  make build-all       构建 amd64 / arm64 / armv7 三架构产物"
+	@echo "  make build-all       构建 amd64 / arm64 双架构产物"
 	@echo "  make frontend-dev    启动前端开发服务器 (Vite :5173)"
 	@echo "  make run             本地编译并运行"
 	@echo "  make test            运行 Go 单元测试"
@@ -46,7 +46,7 @@ help:
 
 build: build-amd64
 
-build-all: build-amd64 build-arm64 build-armv7
+build-all: build-amd64 build-arm64
 
 # ---- 前端 ----
 
@@ -114,11 +114,6 @@ build-arm64: frontend-dist
 	mkdir -p $(DIST_DIR)
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=arm64 $(GO_BUILD) -o $(ARM64_OUT) $(MAIN_PACKAGE)
 	@if [ -n "$(UPX)" ]; then $(UPX) $(UPX_FLAGS) $(ARM64_OUT); else echo "未检测到 upx，跳过压缩: $(ARM64_OUT)"; fi
-
-build-armv7: frontend-dist
-	mkdir -p $(DIST_DIR)
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=arm GOARM=7 $(GO_BUILD) -o $(ARMV7_OUT) $(MAIN_PACKAGE)
-	@if [ -n "$(UPX)" ]; then $(UPX) $(UPX_FLAGS) $(ARMV7_OUT); else echo "未检测到 upx，跳过压缩: $(ARMV7_OUT)"; fi
 
 clean:
 	go clean

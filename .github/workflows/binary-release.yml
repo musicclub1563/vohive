@@ -88,10 +88,6 @@ jobs:
             goarch: amd64
             goarm: ""
             filename: vohive-linux-amd64
-          - target: linux-386
-            goarch: "386"
-            goarm: ""
-            filename: vohive-linux-386
           - target: linux-arm64
             goarch: arm64
             goarm: ""
@@ -100,10 +96,6 @@ jobs:
             goarch: arm64
             goarm: ""
             filename: vohive-linux-aarch64
-          - target: linux-armv7
-            goarch: arm
-            goarm: "7"
-            filename: vohive-linux-armv7
     steps:
       - name: Checkout
         uses: actions/checkout@v4
