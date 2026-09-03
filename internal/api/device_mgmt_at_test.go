@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/1239t/vohive/internal/backend"
 	"github.com/1239t/vohive/internal/config"
 	"github.com/1239t/vohive/internal/device"
 	"github.com/1239t/vohive/internal/modem"
+	"github.com/gin-gonic/gin"
 )
 
 type fakeManualATSession struct {

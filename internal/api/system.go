@@ -7,10 +7,10 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/1239t/vohive/internal/config"
 	"github.com/1239t/vohive/internal/updater"
 	"github.com/1239t/vohive/pkg/logger"
+	"github.com/gin-gonic/gin"
 )
 
 var errNotFound = errors.New("not found")

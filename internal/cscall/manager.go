@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emiago/sipgo"
-	"github.com/emiago/sipgo/sip"
-	"github.com/google/uuid"
 	"github.com/1239t/vohive/internal/modem"
 	"github.com/1239t/vohive/internal/sipgw"
 	"github.com/1239t/vohive/pkg/logger"
 	"github.com/1239t/vowifi-go/runtimehost/voicehost"
+	"github.com/emiago/sipgo"
+	"github.com/emiago/sipgo/sip"
+	"github.com/google/uuid"
 )
 
 // CallState 定义 CS 呼叫状态

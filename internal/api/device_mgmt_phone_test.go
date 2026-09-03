@@ -11,14 +11,14 @@ import (
 	"testing"
 	"unsafe"
 
-	sgp22 "github.com/damonto/euicc-go/v2"
-	"github.com/gin-gonic/gin"
 	"github.com/1239t/vohive/internal/apduarbiter"
 	"github.com/1239t/vohive/internal/config"
 	"github.com/1239t/vohive/internal/db"
 	"github.com/1239t/vohive/internal/device"
 	"github.com/1239t/vohive/internal/esim"
 	"github.com/1239t/vohive/internal/modem"
+	sgp22 "github.com/damonto/euicc-go/v2"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/singleflight"
 )
 

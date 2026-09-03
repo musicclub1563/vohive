@@ -58,11 +58,11 @@ func buildTrafficOverviewFields(iface string, delta db.LatestMinuteDeltas, now t
 	}
 	rate := float64(rx+tx) / 60.0
 	return map[string]string{
-			"rx":   server.FormatBytes(rx),
-			"tx":   server.FormatBytes(tx),
-			"rate": server.FormatBytes(int64(rate)) + "/s",
-		}, map[string]int64{
-			"bytes_received": rx,
-			"bytes_sent":     tx,
-		}, meta
+		"rx":   server.FormatBytes(rx),
+		"tx":   server.FormatBytes(tx),
+		"rate": server.FormatBytes(int64(rate)) + "/s",
+	}, map[string]int64{
+		"bytes_received": rx,
+		"bytes_sent":     tx,
+	}, meta
 }

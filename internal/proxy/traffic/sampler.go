@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iniwex5/quectel-qmi-go/pkg/qmi"
 	"github.com/1239t/vohive/internal/db"
 	"github.com/1239t/vohive/internal/device"
 	"github.com/1239t/vohive/internal/proxy/server"
 	"github.com/1239t/vohive/pkg/logger"
+	"github.com/iniwex5/quectel-qmi-go/pkg/qmi"
 )
 
 const (

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/1239t/vohive/internal/e911"
+	"github.com/gin-gonic/gin"
 )
 
 func e911ErrorStatus(err error) int {

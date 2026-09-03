@@ -10,10 +10,10 @@ import (
 )
 
 type Manager struct {
-	runtimeStore RuntimeStore
-	stateHub     *StateHub
-	recoverStore *DesiredRecoverStore
-	lifecycle    *LifecycleController
+	runtimeStore  RuntimeStore
+	stateHub      *StateHub
+	recoverStore  *DesiredRecoverStore
+	lifecycle     *LifecycleController
 	runtimeStart  runtimeStartFunc
 	adapter       Adapter
 	voiceGateway  *voicehost.Gateway

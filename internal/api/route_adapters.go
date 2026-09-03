@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/1239t/vohive/internal/db"
+	"github.com/gin-gonic/gin"
 )
 
 type enabledPatchRequest struct {

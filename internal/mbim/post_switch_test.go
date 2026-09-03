@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	qmimanager "github.com/iniwex5/quectel-qmi-go/pkg/manager"
 	"github.com/1239t/vohive/pkg/mbim"
+	qmimanager "github.com/iniwex5/quectel-qmi-go/pkg/manager"
 )
 
 func TestManagerGetUIMReadinessUsesSubscriberReadyAndQMICardStatus(t *testing.T) {
