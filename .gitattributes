@@ -1,0 +1,20 @@
+# 行尾规范：以下文件在 Linux 容器中执行，CRLF 会导致 shebang 解析失败或脚本报错。
+*.sh            text eol=lf
+Dockerfile*     text eol=lf
+*.init          text eol=lf
+*.service       text eol=lf
+Makefile        text eol=lf
+
+# 其余文本文件由 Git 自动识别，检出时统一为 LF，避免 gofmt 因 CRLF 误报。
+*               text=auto eol=lf
+
+# 二进制资源不参与换行转换
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.db            binary

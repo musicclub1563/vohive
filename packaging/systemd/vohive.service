@@ -1,0 +1,42 @@
+[Unit]
+Description=VoHive cellular modem management and proxy service
+Documentation=https://github.com/1239t/vohive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/vohive
+ExecStart=/opt/vohive/bin/vohive -c /etc/vohive/config.yaml
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+
+Environment=CONFIG_PATH=/etc/vohive/config.yaml
+Environment=TZ=Asia/Shanghai
+EnvironmentFile=-/etc/vohive/vohive.env
+
+# 需要访问 USB 串口、QMI/MBIM 控制节点并管理网卡，因此不能收窄设备与网络权限。
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=false
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/vohive/data /opt/vohive/logs
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+RestrictRealtime=true
+LockPersonality=true
+UMask=0077
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

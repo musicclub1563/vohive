@@ -1,26 +1,30 @@
-# Docker Compose 配置 - 使用 DockerHub 预构建镜像
-# 镜像地址: iniwex/vohive
-# 用法: docker-compose -f docker-compose.hub.yml up -d
+# Docker Compose 配置 - 使用预构建镜像（无需本地构建）
+#
+# 用法:
+#   docker compose -f docker-compose.hub.yml up -d
+#
+# 首次启动会在 ./config 目录生成 config.yaml（由入口脚本从示例配置复制），
+# 随后可直接在宿主机上编辑该文件并重启容器生效。
 
 services:
   vohive:
-    image: iniwex/vohive:latest
+    image: ghcr.io/1239t/vohive:latest
     container_name: vohive
     restart: unless-stopped
-    ports:
-      - "7575:7575"
+
+    # 代理引擎通过 SO_BINDTODEVICE 把出口流量绑定到模组网卡，
+    # 需要宿主机网络命名空间，因此使用 host 模式（端口映射无效）。
+    network_mode: host
+
+    # 访问 USB 模组、QMI/MBIM 控制通道、AT 串口与网卡管理所需。
+    privileged: true
+
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - TZ=Asia/Shanghai
+
     volumes:
-      # 配置文件 (首次运行需创建)
       - ./config:/app/config
       - ./data:/app/data
-      # 日志目录
       - ./logs:/app/logs
-    environment:
-      - TZ=Asia/Shanghai
-      - CONFIG_PATH=/app/config/config.yaml
-    # 需要访问宿主机设备时启用以下配置
-    privileged: true
-    devices:
-      # USB 设备透传
-      - /dev/:/dev/
-    network_mode: host
+      - /dev:/dev

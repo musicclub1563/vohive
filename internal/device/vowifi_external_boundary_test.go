@@ -9,6 +9,12 @@ import (
 	"testing"
 )
 
+// 拆成两段拼接，避免本文件自身的 import 列表被下方的守卫规则误判。
+const (
+	voWiFiModule = "github.com/1239t/" + "vowifi-go/"
+	vohiveModule = "github.com/1239t/" + "vohive/internal/vowifi"
+)
+
 func TestVoWiFiHostImportsExternalRuntimehostOnly(t *testing.T) {
 	repoRoot := filepath.Clean(filepath.Join("..", ".."))
 	scanRoots := []string{"cmd", "internal"}
@@ -45,14 +51,13 @@ func TestVoWiFiHostImportsExternalRuntimehostOnly(t *testing.T) {
 			rel, _ := filepath.Rel(repoRoot, path)
 			for _, spec := range file.Imports {
 				importPath := strings.Trim(spec.Path.Value, `"`)
-				if strings.HasPrefix(importPath, "github.com/iniwex5/"+"vowifi-go/engine/") {
+				if strings.HasPrefix(importPath, voWiFiModule+"engine/") {
 					continue
 				}
-				if strings.HasPrefix(importPath, "github.com/iniwex5/"+"vowifi-go/") && !allowedVoWiFiImports[importPath] {
+				if strings.HasPrefix(importPath, voWiFiModule) && !allowedVoWiFiImports[importPath] {
 					offenders = append(offenders, rel+": imports non-public VoWiFi package "+importPath)
 				}
-				if importPath == "github.com/iniwex5/"+"vohive/internal/vowifi" ||
-					strings.HasPrefix(importPath, "github.com/iniwex5/"+"vohive/internal/vowifi/") {
+				if importPath == vohiveModule || strings.HasPrefix(importPath, vohiveModule+"/") {
 					offenders = append(offenders, rel+": imports old internal VoWiFi")
 				}
 			}

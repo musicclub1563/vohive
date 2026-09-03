@@ -51,10 +51,44 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  test:
+    name: Go test
+    runs-on: ubuntu-latest
+    needs: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download Go modules
+        run: go mod download
+
+      # internal/web/fs.go uses //go:embed all:dist, so the package cannot
+      # compile until the frontend assets are in place.
+      - name: Download embedded web UI
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Sync frontend dist for embed
+        run: |
+          rm -rf internal/web/dist
+          mkdir -p internal/web
+          cp -R web/dist internal/web/dist
+
+      - name: Test
+        run: go test -tags "with_utls" ./...
+
   build:
     name: Build ${{ matrix.artifact_arch }}
     runs-on: ubuntu-latest
-    needs: frontend
+    needs: [frontend, test]
     strategy:
       fail-fast: false
       matrix:
@@ -195,6 +229,11 @@ jobs:
           pattern: binaries-*
           merge-multiple: true
           path: dist
+
+      - name: Generate checksums
+        shell: bash
+        working-directory: dist
+        run: sha256sum vohive_* | sort > SHA256SUMS
 
       - name: List release files
         shell: bash

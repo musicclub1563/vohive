@@ -1,18 +1,49 @@
+# VoHive Docker Compose deployment (local build from this repository).
+#
+# First start:
+#   docker compose up -d
+#   # open http://<host-ip>:7575  (default account: admin / admin123)
+#
+# The entrypoint seeds /app/config/config.yaml from config.example.yaml on the
+# first start, then you can edit it on the host and restart the container:
+#   docker compose restart
+#
+# Web UI password should be changed right after the first login.
+
 services:
   vohive:
+    image: vohive:local
     build:
-      context: ..  # 使用父目录作为构建上下文，以便访问 quectel-qmi-go 和 swu-go
-      dockerfile: vohive/Dockerfile
-    image: vohive:latest
+      context: .
+      dockerfile: Dockerfile
     container_name: vohive
     restart: unless-stopped
-    network_mode: "host" # 推荐使用 Host 模式以便管理 4G 网卡接口
-    privileged: true     # 需要访问 USB 设备、网络管理能力与 /dev/net/tun
-    volumes:
-      - ./config:/app/config
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - /dev:/dev
+
+    # Host network mode: the proxy engine pins outbound traffic to the modem
+    # interface with SO_BINDTODEVICE, which requires the host network namespace.
+    # Port publishing is therefore meaningless: vohive binds :7575 directly and
+    # per-device proxy ports are reachable on the host IP without mapping.
+    network_mode: host
+
+    # Required for USB modem hot-plug, QMI/MBIM control, AT serial ports and
+    # network interface management.
+    privileged: true
+
     environment:
+      # CONFIG_PATH is already set in the image; listed here for clarity.
+      - CONFIG_PATH=/app/config/config.yaml
       - TZ=Asia/Shanghai
-      - HTTPS_PROXY=http://10.10.10.10:6152
+      # Optional: outbound proxy used for Telegram / eSIM SM-DP+ / updater.
+      # - HTTPS_PROXY=http://proxy-host:port
+      # - HTTP_PROXY=http://proxy-host:port
+
+    volumes:
+      # Configuration (seeded automatically on first start).
+      - ./config:/app/config
+      # SQLite database and persistent state.
+      - ./data:/app/data
+      # Rotated application logs.
+      - ./logs:/app/logs
+      # Required for modem, WWAN and USB hot-plug discovery, including devices
+      # plugged in after the container started.
+      - /dev:/dev

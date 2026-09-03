@@ -56,7 +56,6 @@ coverage.out
 /reader
 vohive.code-workspace
 PushNotification.pdf
-.gitignore
 Quectel_LTE_Standard_UAC_应用指导_V1.0.pdf
 go.work
 go.work.sum
@@ -64,11 +63,7 @@ go.work.sum
 # macOS AppleDouble metadata
 **/._*
 .superpowers/*
-docs/vohive-forum-tutorial-short.md
-docs/vohive-forum-tutorial.md
 .codex
-docs/*
-web/tests
 .worktrees/
 Quectel_EC2xEG2xEG9xEM05_Series_AT_Commands_Manual_V2.2.pdf
 Quectel_EC2xEG2xEG9xEM05_Series_QCFG_AT_Commands_Manual_V1.6.pdf

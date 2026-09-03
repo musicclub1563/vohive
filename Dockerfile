@@ -1,68 +1,67 @@
-# 构建阶段 1: 前端构建 (Frontend)
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/web
-COPY go-4gproxy/web/package*.json ./
-RUN npm ci
-COPY go-4gproxy/web/ .
+# syntax=docker/dockerfile:1.7
+
+# Build toolchains run natively on the BuildKit host. Without --platform=$BUILDPLATFORM
+# the arm64 branch executes npm and the Go compiler through QEMU, which is much
+# slower and makes `npm ci` look like it hangs.
+
+# ---- Stage 1: build the web frontend once on the native builder ----
+FROM --platform=$BUILDPLATFORM node:20-alpine AS web-builder
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/ ./
 RUN npm run build
 
-# 构建阶段 2: 后端构建 (Backend)
-FROM golang:1.24-alpine AS backend-builder
-ARG GH_PAT=""
-WORKDIR /app
-
-# 启用 Go 工具链自动下载
+# ---- Stage 2: cross-compile the Go binary on the native builder ----
+# go.mod requires a newer toolchain than the base image ships; GOTOOLCHAIN=auto
+# downloads it on demand.
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS go-builder
 ENV GOTOOLCHAIN=auto
-ENV GOPRIVATE=github.com/iniwex5/*
-ENV GONOSUMDB=github.com/iniwex5/*
-
-# 安装构建依赖
 RUN apk add --no-cache git
+WORKDIR /src
 
-# 配置 Git 以支持拉取私有库
-RUN if [ -n "${GH_PAT}" ]; then git config --global url."https://x-access-token:${GH_PAT}@github.com/iniwex5/".insteadOf "https://github.com/iniwex5/"; fi
+ARG VERSION=dev
+ARG BUILD_TIME=""
+ARG TARGETOS
+ARG TARGETARCH
 
-# 复制 go mod 文件
-COPY go-4gproxy/go.mod go-4gproxy/go.sum ./
-
+COPY go.mod go.sum ./
+# go.mod replaces github.com/emiago/sipgo with ./third_party/sipgo, so the local
+# replacement must be present before any module resolution happens.
+COPY third_party/ ./third_party/
 RUN go mod download
 
-# 复制源代码 (不包含 internal/web/dist，这将在下一步从前端构建阶段复制)
-COPY go-4gproxy/ .
+COPY . .
+# Overlay the freshly built frontend so `//go:embed all:dist` picks it up.
+COPY --from=web-builder /web/dist ./internal/web/dist
 
-# 复制构建好的前端资源到 internal/web/dist 以便嵌入
-# 必须在 go build 之前完成
-COPY --from=frontend-builder /app/web/dist ./internal/web/dist/
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+    go build -trimpath -buildvcs=false -tags "with_utls nomsgpack" \
+    -ldflags "-s -w -X 'github.com/1239t/vohive/internal/global.Version=${VERSION}' -X 'github.com/1239t/vohive/internal/global.BuildTime=${BUILD_TIME}'" \
+    -o /out/vohive ./cmd/vohive
 
-# 验证前端资源已复制
-RUN ls -la internal/web/dist/ && echo "Frontend assets copied successfully"
+# ---- Stage 3: minimal runtime ----
+FROM alpine:3.20
+# ca-certificates : HTTPS (GitHub release checks, eSIM SM-DP+, notification webhooks)
+# iproute2        : ip/netlink management of wwan* modem interfaces
+# tzdata          : TZ support
+# usbutils        : lsusb diagnostics for modem hot-plug
+RUN apk add --no-cache ca-certificates iproute2 tzdata usbutils
 
-# 整理依赖并编译二进制
-RUN go mod tidy
-RUN VERSION=$(git describe --tags --always --dirty || echo "unknown") && \
-    BUILD_TIME=$(date "+%Y-%m-%d %H:%M:%S") && \
-    CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false -tags "with_utls nomsgpack" -ldflags "-s -w -X 'github.com/iniwex5/vohive/internal/global.Version=${VERSION}' -X 'github.com/iniwex5/vohive/internal/global.BuildTime=${BUILD_TIME}'" -o vo-hive ./cmd/vohive
+RUN mkdir -p /app/config /app/data /app/logs
 
-# 运行阶段 (Runtime)
-FROM alpine:latest
-WORKDIR /app
+COPY --from=go-builder /out/vohive /app/vohive
+COPY config/config.example.yaml /app/config/config.example.yaml
+COPY scripts/docker-entrypoint.sh /usr/local/bin/vohive-entrypoint
 
-# 安装运行时依赖
-# - ca-certificates / tzdata: 基础 HTTPS 与时区支持
-RUN apk add --no-cache ca-certificates tzdata
+RUN chmod 0755 /app/vohive /usr/local/bin/vohive-entrypoint
 
-# 复制二进制文件
-COPY --from=backend-builder /app/vo-hive .
-
-# 创建配置和数据目录
-RUN mkdir -p config data logs
-
-# 暴露端口 (API)
+# Modem discovery, QMI/MBIM control and network management need host networking
+# and device access; see docker-compose.yml for the required flags.
+VOLUME ["/app/data", "/app/config", "/app/logs"]
 EXPOSE 7575
+ENV CONFIG_PATH=/app/config/config.yaml \
+    TZ=Asia/Shanghai
 
-# 默认配置路径环境变量
-ENV CONFIG_PATH=/app/config/config.yaml
-
-# 入口点
-ENTRYPOINT ["./vo-hive"]
+ENTRYPOINT ["/usr/local/bin/vohive-entrypoint"]
 CMD ["-c", "/app/config/config.yaml"]

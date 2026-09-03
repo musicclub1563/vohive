@@ -17,9 +17,30 @@ import (
 )
 
 const (
-	repoOwner = "iniwex5"
-	repoName  = "vohive-release"
+	repoOwner = "1239t"
+	repoName  = "vohive"
 )
+
+// repoAccessToken 返回访问 GitHub Release API 的令牌。
+//
+// 仓库为私有时，未带令牌的请求会返回 404，在线更新与更新检查将不可用。
+// 依次读取 VOHIVE_UPDATE_TOKEN（推荐）与 GITHUB_TOKEN，两者均为空则不鉴权。
+// 令牌需要对该私有仓库具备 repo（或 contents:read）权限。
+func repoAccessToken() string {
+	if token := strings.TrimSpace(os.Getenv("VOHIVE_UPDATE_TOKEN")); token != "" {
+		return token
+	}
+	return strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
+}
+
+// authRequest 为 GitHub API 请求附加标准请求头与可选令牌。
+func authRequest(req *http.Request) {
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	if token := repoAccessToken(); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+}
 
 type Release struct {
 	TagName string  `json:"tag_name"`
@@ -50,7 +71,7 @@ func CheckUpdate() (*UpdateInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	authRequest(req)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -108,7 +129,13 @@ func ApplyUpdate() error {
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", repoOwner, repoName)
 	client := &http.Client{Timeout: 15 * time.Second}
 
-	resp, err := client.Get(apiURL)
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to fetch release info: %w", err)
+	}
+	authRequest(req)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch release info: %w", err)
 	}
@@ -143,8 +170,17 @@ func ApplyUpdate() error {
 
 	logger.Info("开始下载更新", "url", downloadURL)
 
-	// 下载二进制
-	dlResp, err := http.Get(downloadURL)
+	// 下载二进制。私有仓库的 Release 资产下载也需要令牌鉴权。
+	dlReq, err := http.NewRequest(http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create download request: %w", err)
+	}
+	dlReq.Header.Set("Accept", "application/octet-stream")
+	if token := repoAccessToken(); token != "" {
+		dlReq.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	dlResp, err := client.Do(dlReq)
 	if err != nil {
 		return fmt.Errorf("failed to download update: %w", err)
 	}

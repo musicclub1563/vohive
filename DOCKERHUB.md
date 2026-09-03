@@ -4,125 +4,70 @@
 
 ## 🚀 快速开始
 
-### 1. 创建配置目录
+### 1. 创建目录与配置文件
 
 ```bash
 mkdir -p vohive/{config,data,logs}
 cd vohive
+curl -fsSL https://raw.githubusercontent.com/1239t/vohive/master/docker-compose.hub.yml -o docker-compose.yml
 ```
 
-### 2. 创建配置文件
+首次启动会在 `./config` 下自动生成 `config.yaml`（由入口脚本从示例配置复制），之后可直接在宿主机编辑并重启容器生效。
+
+### 2. 启动服务
 
 ```bash
-cat > config/config.yaml << 'EOF'
-server:
-  port: 7575
-  debug: false
-
-web:
-  username: admin
-  # 首次登录后请在 Web 界面修改密码
-  password: admin123
-
-EOF
+docker compose up -d
+docker compose logs -f
 ```
 
-### 3. 使用 Docker Compose 启动
+### 3. 访问 Web 界面
 
-创建 `docker-compose.yml`:
+打开浏览器访问: `http://<宿主机 IP>:7575`
 
-```yaml
-services:
-  vohive:
-    image: iniwex/vohive:latest
-    container_name: vohive
-    restart: unless-stopped
-    ports:
-      - "7575:7575"
-    volumes:
-      # 配置文件 (首次运行需创建)
-      - ./config:/app/config
-      - ./data:/app/data
-      # 日志目录
-      - ./logs:/app/logs
-    environment:
-      - TZ=Asia/Shanghai
-      - CONFIG_PATH=/app/config/config.yaml
-      # 代理服务器,可选
-      - HTTPS_PROXY=http://proxy-ip:port
-    # 需要访问宿主机设备时启用以下配置
-    privileged: true
-    devices:
-      # USB 设备透传
-      - /dev/:/dev/
-    network_mode: host
-```
+默认账号: `admin` / `admin123`，**登录后请立即在「设置」中修改密码**。
 
-启动服务：
-
-```bash
-docker-compose up -d
-```
-
-### 4. 访问 Web 界面
-
-打开浏览器访问: `http://YOUR_IP:7575`
-
-默认账号: `admin` / `admin123`
+> 使用 `network_mode: host`，端口映射不生效，服务直接绑定 `:7575`。
+> 代理端口同样通过宿主机 IP 访问，无需单独映射。
 
 ## 📦 镜像标签
 
+镜像发布在 GitHub Container Registry：
+
 | 标签 | 说明 |
 |------|------|
-| `latest` | 最新稳定版 |
-| `vX.X.X` | 指定版本号 |
-| `main` | 开发版 (可能不稳定) |
+| `ghcr.io/1239t/vohive:latest` | 最新稳定版 |
+| `ghcr.io/1239t/vohive:<version>` | 指定版本号（如 `v1.0.0`） |
+
+多架构 manifest 覆盖 `linux/amd64` 与 `linux/arm64`；需要 `armv7` 请使用 Release 二进制。
 
 ## 🔧 环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `TZ` | `UTC` | 时区 |
 | `CONFIG_PATH` | `/app/config/config.yaml` | 配置文件路径 |
+| `TZ` | `Asia/Shanghai` | 时区 |
+| `HTTP_PROXY` / `HTTPS_PROXY` | 空 | 可选出站代理，用于 Telegram / SM-DP+ / 更新检查 |
+
+其余配置项通过 `config.yaml` 设置，详见 [docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
 
 ## 📁 数据卷
 
 | 路径 | 说明 |
 |------|------|
-| `/app/config` | 配置文件目录 |
-| `/app/data` | 数据库存储 |
+| `/app/config` | 配置文件目录（首次启动自动播种） |
+| `/app/data` | SQLite 数据库与持久化状态 |
 | `/app/logs` | 日志文件 |
+| `/dev` | 模组热插拔与 USB 设备发现所需 |
 
-## 🤖 Telegram Bot
+## 🔄 更新
 
-支持通过 Telegram Bot 远程管理设备。在 Web 界面 **设置 → 通知** 中配置。
+容器内不支持二进制热替换，请拉取新镜像后重建容器：
 
-### 配置步骤
-
-1. 通过 [@BotFather](https://t.me/BotFather) 创建 Bot，获取 Token
-2. 获取你的 Chat ID（可通过 [@userinfobot](https://t.me/userinfobot) 查询）
-3. 在 VoHive 设置页面填入 Bot Token 和 Chat ID
-4. 如服务器无法直连 Telegram，填写 TG API 代理地址
-
-### 支持的命令
-
-| 命令 | 说明 |
-|------|------|
-| `/list` | 列出设备列表 |
-| `/rotate <设备>` | 重置设备 IP |
-| `/sms <设备>` | 查看最近短信 |
-| `/send <设备> <号码> <内容>` | 发送短信 |
-
-### 代理配置
-
-中国大陆服务器需要配置代理才能访问 Telegram API：
-
-```yaml
-environment:
-  - HTTPS_PROXY=http://your-proxy:port
+```bash
+docker compose pull
+docker compose up -d
 ```
-
-或在 Web 界面的 **TG API 代理** 字段填写 Cloudflare Worker 地址。
 
 ## 🖥️ 支持架构
 
@@ -131,8 +76,13 @@ environment:
 
 ## 📖 文档
 
-完整文档请访问: [GitHub](https://github.com/iniwex5/vohive)
+- [配置参考](docs/CONFIGURATION.md)
+- [部署指南](docs/DEPLOYMENT.md)
+- [API 说明](docs/API.md)
+- [常见问题](docs/FAQ.md)
+
+完整文档见仓库根目录 [README.md](README.md)。
 
 ## 📝 License
 
-MIT License
+本项目基于 [PolyForm Noncommercial License 1.0.0](LICENSE) 开源，**仅限非商业用途**：可自由查看、使用、修改、分发源码用于个人学习、研究、测试等非商业场景；**禁止任何形式的商业使用**（包括但不限于销售、提供付费服务、用于盈利性产品或业务）。如需商业授权，请联系作者另行协商。
