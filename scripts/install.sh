@@ -4,8 +4,8 @@
 #
 # 用法:
 #   1) 远程一键安装(自动检测架构,从 GitHub Release 下载对应 tar.xz 并安装为 systemd 服务):
-#        curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts/install.sh | sudo bash
-#      指定版本:  VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/master/scripts/install.sh)
+#        curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive-release/main/scripts/install.sh | sudo bash
+#      指定版本:  VOHIVE_VERSION=v0.1.1 sudo bash <(curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive-release/main/scripts/install.sh)
 #      私有仓库: 需附带令牌,GITHUB_TOKEN=ghp_xxx VOHIVE_VERSION=v0.1.1 sudo bash <(curl ...)
 #
 #   2) 本地安装(在已解压的发布包目录内执行,无需联网,适合手动分发 / 私有环境):
@@ -13,7 +13,7 @@
 #
 set -euo pipefail
 
-REPO="${VOHIVE_REPO:-musicclub1563/vohive}"
+REPO="${VOHIVE_REPO:-musicclub1563/vohive-release}"
 VERSION="${VOHIVE_VERSION:-latest}"
 
 BIN_DIR="/opt/vohive/bin"

@@ -172,7 +172,7 @@ jobs:
     needs: binaries
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     steps:
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -187,12 +187,11 @@ jobs:
 
       - name: Create or update GitHub Release
         run: |
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+          if gh release view "$GITHUB_REF_NAME" --repo "musicclub1563/vohive-release" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --repo "musicclub1563/vohive-release" --clobber
           else
             gh release create "$GITHUB_REF_NAME" dist/* \
-              --repo "$GITHUB_REPOSITORY" \
+              --repo "musicclub1563/vohive-release" \
               --title "$GITHUB_REF_NAME" \
-              --generate-notes \
-              --verify-tag
+              --generate-notes
           fi
