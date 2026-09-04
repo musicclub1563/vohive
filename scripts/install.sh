@@ -83,7 +83,7 @@ CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
 NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=false
-ReadWritePaths=/opt/vohive/data /opt/vohive/logs
+ReadWritePaths=/opt/vohive/data /opt/vohive/logs /etc/vohive
 
 [Install]
 WantedBy=multi-user.target
