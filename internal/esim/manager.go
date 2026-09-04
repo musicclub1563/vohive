@@ -3563,17 +3563,13 @@ func (m *Manager) DownloadProfile(ctx context.Context, aidHex, smdp, matchingID,
 
 	preDownloadNotifications, preDownloadNotificationsErr := safeListNotification(client, sgp22.NotificationEventInstall)
 
-	report("preflight", "正在检查 eUICC 剩余空间...", 10)
+	report("preflight", "正在读取 eUICC 剩余空间...", 10)
 	beforeFreeNvramBytes := int32(0)
 	{
 		checkInfo := EUICCInfo{}
 		m.parseEUICCInfo2ForEID(client, &checkInfo)
 		beforeFreeNvramBytes = checkInfo.FreeNvramBytes
-		if checkInfo.FreeNvramBytes > 0 && checkInfo.FreeNvramBytes < 81920 {
-			return DownloadProfileResult{}, fmt.Errorf("已触发防炸卡保护拦截：目标 EID 剩余空间极度紧张（%d Bytes / %s，低于安全阈值 80KB）。请先删除多余的 Profile 释放空间后再试。",
-				checkInfo.FreeNvramBytes, checkInfo.FreeNvram)
-		}
-		logger.Info("防炸卡预检通过", "device", m.deviceID, "freeNvram", checkInfo.FreeNvram)
+		logger.Info("下载前 eUICC 剩余空间", "device", m.deviceID, "freeNvram", checkInfo.FreeNvram)
 	}
 
 	imei, err := m.resolveDownloadIMEI(ctx, downloadIMEI)
