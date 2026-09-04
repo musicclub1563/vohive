@@ -17,12 +17,8 @@ import {
 } from '../utils/upstreamProxyAddress'
 import {
   Add24Regular,
-  Play24Regular,
-  Stop24Regular,
-  ArrowSync24Regular,
   Edit24Regular,
   Delete24Regular,
-  Router24Regular,
   Link24Regular,
   Earth24Regular
 } from '@vicons/fluent'
@@ -63,12 +59,7 @@ const modeOptions: Array<{ label: string; value: ProxyMode }> = [
   { label: 'HTTP', value: 'http' }
 ]
 
-const instancesWithStatus = computed(() => {
-  return instances.value.map((inst) => ({
-    ...inst,
-    status: statusMap.value[inst.id] || { id: inst.id, running: false }
-  }))
-})
+
 
 watch(
   () => instanceForm.value.auth_enabled,
@@ -128,80 +119,9 @@ async function saveConfig() {
   }
 }
 
-async function startInstance(id: string) {
-  try {
-    const result = await proxyStore.startInstance(id)
-    if (!result.ok) throw new Error(result.error.message || '启动失败')
-    ElMessage.success('已启动')
-    await fetchOverview()
-  } catch (e: unknown) {
-    const err = toAppError(e)
-    ElMessage.error(err.message || '启动失败')
-  }
-}
 
-async function stopInstance(id: string) {
-  try {
-    const result = await proxyStore.stopInstance(id)
-    if (!result.ok) throw new Error(result.error.message || '停止失败')
-    ElMessage.success('已停止')
-    await fetchOverview()
-  } catch (e: unknown) {
-    const err = toAppError(e)
-    ElMessage.error(err.message || '停止失败')
-  }
-}
 
-async function restartInstance(id: string) {
-  try {
-    const result = await proxyStore.restartInstance(id)
-    if (!result.ok) throw new Error(result.error.message || '重启失败')
-    ElMessage.success('已重启')
-    await fetchOverview()
-  } catch (e: unknown) {
-    const err = toAppError(e)
-    ElMessage.error(err.message || '重启失败')
-  }
-}
 
-function resetForm() {
-  instanceForm.value = {
-    id: '',
-    name: '',
-    device_id: devices.value[0]?.id || '',
-    enabled: true,
-    mode: 'socks5',
-    listen_addr: '0.0.0.0',
-    listen_port: 1080,
-    auth_enabled: false,
-    username: '',
-    password: ''
-  }
-}
-
-async function openDrawer(inst?: ProxyInstance) {
-  if (!inst) {
-    editingInstance.value = null
-    resetForm()
-    instanceForm.value.id = `proxy-${Date.now()}`
-    instanceForm.value.listen_port = 10800 + instances.value.length
-    drawerOpen.value = true
-    return
-  }
-
-  editingInstance.value = inst
-  instanceForm.value = { ...inst, mode: inst.mode || 'socks5' }
-  drawerOpen.value = true
-
-  try {
-    const result = await proxyStore.fetchInstance(inst.id)
-    if (result.ok) {
-      instanceForm.value = { ...result.data, mode: result.data.mode || 'socks5' }
-    }
-  } catch {
-    ElMessage.warning('读取完整实例配置失败，已使用概览数据')
-  }
-}
 
 function saveForm() {
   const form = { ...instanceForm.value }
@@ -255,21 +175,7 @@ function saveForm() {
   saveConfig()
 }
 
-async function deleteInstance(id: string) {
-  const confirmed = await ElMessageBox.confirm(
-    `确定删除实例 ${id}？`,
-    '确认删除',
-    { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
-  ).then(() => true).catch(() => false)
 
-  if (!confirmed) return
-  instances.value = instances.value.filter((i) => i.id !== id)
-  saveConfig()
-}
-
-function formatModeLabel(mode: string | undefined) {
-  return mode === 'http' ? 'HTTP' : 'SOCKS5'
-}
 
 const pollEnabled = computed(() => !initialLoading.value && instances.value.length > 0)
 usePollingScheduler(() => fetchOverview({ silent: true }), 5000, {
