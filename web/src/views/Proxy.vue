@@ -498,7 +498,7 @@ usePollingScheduler(() => fetchUpstream({ silent: true }), 10000, {
 
 <template>
   <div class="max-w-7xl mx-auto">
-    <PageHeader title="代理管理" subtitle="管理本地出站代理和 VoWiFi 漫游前置代理" />
+    <PageHeader title="代理管理" subtitle="管理 VoWiFi 漫游前置代理" />
 
     <!-- Tab 切换 -->
     <el-tabs v-model="activeTab" class="proxy-tabs mb-4">
@@ -513,17 +513,7 @@ usePollingScheduler(() => fetchUpstream({ silent: true }), 10000, {
           </div>
         </template>
       </el-tab-pane>
-      <el-tab-pane name="outbound">
-        <template #label>
-          <div class="flex items-center gap-1.5">
-            <el-icon size="16"><Router24Regular /></el-icon>
-            <span class="font-medium">本地出站代理</span>
-            <span v-if="instances.length > 0" class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-blue-500 rounded-full shadow-sm ml-0.5">
-              {{ instances.length }}
-            </span>
-          </div>
-        </template>
-      </el-tab-pane>
+      
     </el-tabs>
 
     <!-- ═══════════ 前置代理 Tab ═══════════ -->
@@ -613,95 +603,7 @@ usePollingScheduler(() => fetchUpstream({ silent: true }), 10000, {
       </div>
     </div>
 
-    <!-- ═══════════ 出站代理 Tab ═══════════ -->
-    <div v-show="activeTab === 'outbound'">
-      <ErrorState
-        v-if="loadError"
-        class="mb-6"
-        title="加载代理配置失败"
-        :message="loadError.message"
-        :status-code="loadError.status"
-        retry-text="重试"
-        @retry="fetchOverview"
-      />
-
-      <div class="ui-card p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25">
-              <el-icon size="20"><Router24Regular /></el-icon>
-            </div>
-            <div>
-              <div class="text-lg font-bold text-gray-900 dark:text-white">本地出站实例</div>
-              <div class="text-xs text-gray-500">每个实例必须绑定一个物理网络接口提供出口通道，通常用于特定分流和IP池场景</div>
-            </div>
-          </div>
-          <el-button type="primary" @click="openDrawer()" class="!border-0">
-            <el-icon class="mr-1.5"><Add24Regular /></el-icon>
-            <span>新增实例</span>
-          </el-button>
-        </div>
-
-        <ListSkeleton v-if="initialLoading && instances.length === 0" :rows="3" />
-
-        <EmptyState v-else-if="instances.length === 0" title="暂无代理实例" subtitle="点击「新增实例」创建第一个实例" />
-
-        <div v-else class="space-y-3">
-          <div
-            v-for="inst in instancesWithStatus"
-            :key="inst.id"
-            class="ui-panel-muted p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
-          >
-            <div class="flex items-center gap-3 min-w-0">
-              <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="inst.status.running ? 'bg-green-500' : 'bg-gray-300'" />
-              <div class="min-w-0">
-                <div class="font-bold text-gray-900 dark:text-white truncate">{{ inst.name || inst.id }}</div>
-                <div class="text-xs text-gray-500 mt-0.5 truncate">
-                  {{ formatModeLabel(inst.mode) }} · {{ inst.listen_addr }}:{{ inst.listen_port }} · 绑定: {{ devices.find(d => d.id === inst.device_id)?.name || inst.device_id }}
-                </div>
-                <div v-if="inst.status.last_error" class="text-xs text-red-500 mt-1 truncate">
-                  {{ inst.status.last_error }}
-                </div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-              <el-tag size="small" :type="inst.enabled ? 'success' : 'info'">
-                {{ inst.enabled ? '启用' : '禁用' }}
-              </el-tag>
-              <el-tag size="small" :type="inst.status.running ? 'success' : 'danger'">
-                {{ inst.status.running ? '运行中' : '已停止' }}
-              </el-tag>
-              <el-tag size="small" type="info">
-                {{ formatModeLabel(inst.mode) }}
-              </el-tag>
-              <el-tag size="small" :type="inst.auth_enabled ? 'warning' : 'info'">
-                {{ inst.auth_enabled ? '账号认证' : '免认证' }}
-              </el-tag>
-
-              <el-button-group class="ml-2">
-                <el-button v-if="!inst.status.running" size="small" :disabled="!inst.enabled" @click="startInstance(inst.id)">
-                  <el-icon><Play24Regular /></el-icon>
-                </el-button>
-                <el-button v-if="inst.status.running" size="small" @click="stopInstance(inst.id)">
-                  <el-icon><Stop24Regular /></el-icon>
-                </el-button>
-                <el-button size="small" @click="restartInstance(inst.id)" :disabled="!inst.enabled">
-                  <el-icon><ArrowSync24Regular /></el-icon>
-                </el-button>
-              </el-button-group>
-
-              <el-button size="small" @click="openDrawer(inst)">
-                <el-icon><Edit24Regular /></el-icon>
-              </el-button>
-              <el-button size="small" type="danger" @click="deleteInstance(inst.id)">
-                <el-icon><Delete24Regular /></el-icon>
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- ═══════════ 出站代理编辑 Drawer ═══════════ -->
     <el-drawer v-model="drawerOpen" :title="editingInstance ? '编辑代理实例' : '新增代理实例'" size="560px">
