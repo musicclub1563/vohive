@@ -64,6 +64,22 @@ sudo ./install.sh        # 本地安装模式,自动注册 systemd 服务
 
 包内含 `vohive` 二进制、`config.example.yaml` 示例配置、`vohive.service` 单元与 `install.sh` 安装脚本。完整部署(含 Docker、OpenWrt、systemd 细节)见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
+## 卸载
+
+如需移除 VoHive,可使用仓库内置的一键卸载脚本,它会自动停止并禁用 systemd 服务、杀掉残留进程,并删除程序与配置目录:
+
+```bash
+# 本地执行(需 root)
+sudo bash scripts/uninstall_vohive.sh
+# 静默模式(跳过确认)
+sudo bash scripts/uninstall_vohive.sh -y
+
+# 远程一键卸载
+curl -fsSL https://raw.githubusercontent.com/musicclub1563/vohive/main/scripts/uninstall_vohive.sh | sudo bash -s -- -y
+```
+
+脚本会清理 `/opt/vohive`(程序、数据、日志)、`/etc/vohive`(配置)与 `/etc/systemd/system/vohive.service`;本机网络与拨号配置不受影响。
+
 ## 免责声明
 
 - **用途定位**:本项目主要面向个人学习、技术研究与功能测试场景,不建议直接用于生产环境或关键业务系统;由此产生的部署及使用风险由使用者自行承担。
