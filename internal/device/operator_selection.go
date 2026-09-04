@@ -22,6 +22,9 @@ var (
 const operatorScanTimeout = 120 * time.Second
 const operatorScanRetryableMessage = "扫描超时或模组忙，请稍后重试"
 
+// operatorScanStateBusyMessage 针对模组已联网/已建立数据业务、拒绝并发主动扫描的场景。
+const operatorScanStateBusyMessage = "模组拒绝了网络扫描（QMI 内部错误 0x0046）：常见于模组已联网、正在使用数据业务时无法并发执行主动扫描。建议先在「设备」中断开数据连接后重试，或等待网络空闲。"
+
 type OperatorScanStatus string
 
 const (
@@ -75,10 +78,31 @@ func isRetryableOperatorScanError(err error) bool {
 		return true
 	}
 	qe := qmi.GetQMIError(err)
-	return qe != nil &&
-		qe.Service == qmi.ServiceNAS &&
-		qe.MessageID == qmi.NASPerformNetworkScan &&
-		qe.ErrorCode == qmi.QMIErrInternal
+	if qe != nil && qe.Service == qmi.ServiceNAS && qe.MessageID == qmi.NASPerformNetworkScan {
+		// 模组拒绝了主动网络扫描。常见于已注册/已联网（数据业务已建立）时
+		// 无法并发执行扫描。把这些状态码都视为可重试，让上层展示友好提示
+		// 而非原始 QMI 字节。
+		switch qe.ErrorCode {
+		case qmi.QMIErrInternal, // 0x0003 内部错误
+			0x0046,                    // 模组忙/当前射频态下无法扫描
+			qmi.QMIErrInvalidQmiCmd,   // 0x0047 不支持的 QMI 命令
+			qmi.QMIErrNotSupported,    // 0x005E 不支持
+			qmi.QMIErrDeviceNotReady,  // 0x0005 设备未就绪
+			qmi.QMIErrNetworkNotReady, // 0x0006 网络未就绪
+			qmi.QMIErrOutOfCall:       // 0x000F 未建立数据呼叫
+			return true
+		}
+	}
+	return false
+}
+
+// operatorScanErrorMessage 返回面向用户的扫描失败说明；对 0x0046 给出更具体的提示。
+func operatorScanErrorMessage(err error) string {
+	qe := qmi.GetQMIError(err)
+	if qe != nil && qe.Service == qmi.ServiceNAS && qe.MessageID == qmi.NASPerformNetworkScan && qe.ErrorCode == 0x0046 {
+		return operatorScanStateBusyMessage
+	}
+	return operatorScanRetryableMessage
 }
 
 func (w *Worker) IsOperatorScanActive() bool {
@@ -166,10 +190,12 @@ func (w *Worker) runOperatorScan(ctx context.Context, cancel context.CancelFunc,
 		result.Err = err.Error()
 		if isRetryableOperatorScanError(err) {
 			result.Retryable = true
-			result.Message = operatorScanRetryableMessage
+			result.Message = operatorScanErrorMessage(err)
 		} else {
 			result.Message = err.Error()
 		}
+		// 即使主动扫描失败，也合并模组被动上报的增量扫描结果（若有）。
+		w.mergeIncrementalOperatorScan(&result)
 	} else {
 		result.Status = OperatorScanStatusComplete
 		result.UpdatedAt = time.Now()

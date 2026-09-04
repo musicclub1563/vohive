@@ -19,10 +19,51 @@ func (q *QMIBackend) ScanOperators(ctx context.Context) ([]OperatorCandidate, er
 	}
 
 	results, err := src.NASPerformNetworkScan(ctx)
-	if err != nil {
+	if err == nil {
+		return qmiNetworkScanResultsToOperatorCandidates(results), nil
+	}
+
+	// 主动扫描被模组拒绝（常见于已注册/已联网、无法并发扫描）。改为触发模组
+	// 重新搜网，并收集其被动上报的增量扫描结果。
+	if qe := qmi.GetQMIError(err); qe != nil && qe.Service == qmi.ServiceNAS && qe.MessageID == qmi.NASPerformNetworkScan {
+		if ferr := src.NASForceNetworkSearch(ctx); ferr != nil {
+			return nil, err
+		}
+		if candidates, gerr := q.collectIncrementalScan(ctx, src); gerr == nil || len(candidates) > 0 {
+			return candidates, nil
+		}
+		// 没收集到任何结果，返回原始主动扫描错误，便于上层归类为可重试。
 		return nil, err
 	}
-	return qmiNetworkScanResultsToOperatorCandidates(results), nil
+	return nil, err
+}
+
+// collectIncrementalScan 轮询模组被动上报的增量网络扫描快照，最多等待 60s，
+// 一旦拿到结果即返回（扫描完成时立即返回，未完成但已有结果时也返回）。
+func (q *QMIBackend) collectIncrementalScan(ctx context.Context, src nasControlSource) ([]OperatorCandidate, error) {
+	pollCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	var last []OperatorCandidate
+	for {
+		info, _, ok := src.NASIncrementalNetworkScanSnapshot()
+		if ok && info != nil && len(info.Results) > 0 {
+			last = qmiNetworkScanResultsToOperatorCandidates(info.Results)
+			if info.ScanComplete {
+				return last, nil
+			}
+		}
+		select {
+		case <-pollCtx.Done():
+			if len(last) > 0 {
+				return last, nil
+			}
+			return last, context.DeadlineExceeded
+		case <-ticker.C:
+		}
+	}
 }
 
 func (q *QMIBackend) IncrementalOperatorScanSnapshot() ([]OperatorCandidate, bool, time.Time, bool) {
