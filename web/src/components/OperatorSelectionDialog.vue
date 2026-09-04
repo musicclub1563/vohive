@@ -157,9 +157,10 @@ watch(scanState, (next) => {
         </el-button>
       </div>
 
-      <div v-if="scanning || scanMessage || scanError" class="mb-4 rounded-lg border px-3 py-2 text-xs"
-        :class="scanError ? (scanRetryable ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300') : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300'">
-        {{ scanError || scanMessage }}
+      <!-- 红色错误小条:仅在不可重试的原始错误时显示;可重试/扫描中提示交给下方 v-else-if 链,
+           避免与第 191 行 retryable 大块重复显示同一段中文。 -->
+      <div v-if="scanError && !scanRetryable" class="mb-4 rounded-lg border px-3 py-2 text-xs border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+        {{ scanError }}
       </div>
 
       <!-- 扫描结果列表 -->
