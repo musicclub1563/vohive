@@ -1,7 +1,11 @@
 package updater
 
 import (
+	"archive/tar"
+	"bytes"
 	"encoding/json"
+	"io"
+	"path/filepath"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +17,7 @@ import (
 	"github.com/1239t/vohive/internal/global"
 	"github.com/1239t/vohive/pkg/logger"
 	"github.com/minio/selfupdate"
+	"github.com/ulikunitz/xz"
 	"golang.org/x/mod/semver"
 )
 
@@ -198,8 +203,15 @@ func ApplyUpdate() error {
 		return fmt.Errorf("download failed with status %d", dlResp.StatusCode)
 	}
 
+	// Release 资产是 .tar.xz 归档，而 selfupdate 需要解压后的原始二进制。
+	// 先解压归档并提取名为 "vohive" 的可执行文件，再交给 selfupdate 做原子替换。
+	binData, err := extractBinaryFromTarXZ(dlResp.Body, "vohive")
+	if err != nil {
+		return fmt.Errorf("failed to extract binary from archive: %w", err)
+	}
+
 	// 执行替换
-	err = selfupdate.Apply(dlResp.Body, selfupdate.Options{})
+	err = selfupdate.Apply(bytes.NewReader(binData), selfupdate.Options{})
 	if err != nil {
 		// 回滚
 		if rerr := selfupdate.RollbackError(err); rerr != nil {
@@ -222,4 +234,37 @@ func ApplyUpdate() error {
 	}()
 
 	return nil
+}
+
+// extractBinaryFromTarXZ 从 .tar.xz 流中解压并提取名为 wantName 的可执行文件内容。
+// Release 资产经 xz 压缩并以 tar 打包，selfupdate 只能消费解压后的裸二进制，
+// 因此下载后必须在此解包，否则会把压缩数据当成 ELF 写入导致启动失败。
+func extractBinaryFromTarXZ(r io.Reader, wantName string) ([]byte, error) {
+	xzr, err := xz.NewReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("xz decompress: %w", err)
+	}
+	tr := tar.NewReader(xzr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("tar read: %w", err)
+		}
+		if filepath.Base(hdr.Name) != wantName {
+			continue
+		}
+		// 防御过大文件撑爆内存；正常二进制不会超过 200MiB。
+		if hdr.Size > 200*1024*1024 {
+			return nil, fmt.Errorf("binary %q too large: %d bytes", wantName, hdr.Size)
+		}
+		data, err := io.ReadAll(io.LimitReader(tr, hdr.Size))
+		if err != nil {
+			return nil, fmt.Errorf("read binary entry: %w", err)
+		}
+		return data, nil
+	}
+	return nil, fmt.Errorf("binary %q not found in archive", wantName)
 }

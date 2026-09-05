@@ -20,6 +20,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/things-go/go-socks5 v0.1.1
+	github.com/ulikunitz/xz v0.5.16
 	github.com/warthog618/sms v0.3.0
 	go.bug.st/serial v1.6.4
 	go.uber.org/zap v1.27.1
