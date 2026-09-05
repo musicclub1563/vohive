@@ -53,11 +53,11 @@ sudo ./install.sh            # 本地安装模式：复制二进制、生成配�
 
 服务单元要点：
 
-- 源码见 `packaging/systemd/vohive.service`，安装后位于 `/etc/systemd/system/vohive.service`。
+- 单元文件见 [`packaging/systemd/vohive.service`](https://github.com/musicclub1563/vohive/blob/v0.1.14/packaging/systemd/vohive.service)（v0.1.14 起已为自更新放开 `/opt/vohive/bin` 写权限），安装后位于 `/etc/systemd/system/vohive.service`。
 - `ExecStart=/opt/vohive/bin/vohive -c /etc/vohive/config.yaml`。
 - 通过 `EnvironmentFile=-/etc/vohive/vohive.env` 注入可选环境变量（文件不存在时忽略）。
 - 需要网卡与原始套接字能力，因此保留 `CAP_NET_ADMIN`、`CAP_NET_RAW` 且 `PrivateDevices=false`。
-- 数据目录 `/opt/vohive/data`、日志目录 `/opt/vohive/logs` 在 `ReadWritePaths` 中放行。
+- 数据目录 `/opt/vohive/data`、日志目录 `/opt/vohive/logs` 与二进制目录 `/opt/vohive/bin`（自更新就地重写可执行文件所需）均在 `ReadWritePaths` 中放行。
 
 常用运维：
 
@@ -113,7 +113,7 @@ ip-full
 
 ## 更新
 
-- **二进制 / systemd**：Web 界面「设置 → 系统」提供更新检查与应用，或在 [Releases](https://github.com/musicclub1563/vohive/releases) 下载新版本替换后 `systemctl restart vohive`。
+- **二进制 / systemd**：Web 界面「设置 → 系统」提供更新检查与应用，或在 [Releases](https://github.com/musicclub1563/vohive/releases) 下载新版本替换后 `systemctl restart vohive`。自更新依赖 systemd 单元放行 `/opt/vohive/bin` 写权限（v0.1.14 及以上附带的单元文件已包含此放行），使用旧版单元文件会报 `read-only file system`。
   自更新会下载与当前架构匹配的产物，通过 `minio/selfupdate` 原子替换可执行文件，失败自动回滚。
 - **Docker**：容器内**不要**执行二进制热替换，请拉取新镜像后重建容器：
 
