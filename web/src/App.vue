@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import LoadingScreen from './components/LoadingScreen.vue'
+import EulaGate from './components/EulaGate.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -47,6 +48,8 @@ const shell = computed(() =>
         <LoadingScreen />
       </template>
     </Suspense>
+
+    <EulaGate />
 
   </div>
 </template>

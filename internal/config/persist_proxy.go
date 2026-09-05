@@ -66,6 +66,9 @@ func UpdateProxyConfigInFile(path string, cfg ProxyConfig) error {
 
 // updateProxyInFile 通用的代理配置更新函数
 func updateProxyInFile(path string, mutate func(*yaml.Node) error) error {
+	configFileMu.Lock()
+	defer configFileMu.Unlock()
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("读取配置文件失败: %w", err)

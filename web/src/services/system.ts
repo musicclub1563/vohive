@@ -256,5 +256,11 @@ export const systemService = {
       const res = await api.post<{ message: string }>('/system/update/apply', {})
       return res.data
     })
+  },
+  uninstall() {
+    return callService(async () => {
+      await api.post('/system/uninstall', {})
+      return true
+    })
   }
 }

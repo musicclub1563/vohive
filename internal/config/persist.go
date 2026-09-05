@@ -9,6 +9,9 @@ import (
 )
 
 func UpdateNotificationInFile(path string, telegram TelegramConfig, feishu FeishuConfig, qq QQConfig, webhook WebhookConfig, bark BarkConfig, email EmailConfig, pushplus PushplusConfig) error {
+	configFileMu.Lock()
+	defer configFileMu.Unlock()
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("读取配置文件失败: %w", err)
@@ -98,6 +101,9 @@ func UpdateNotificationInFile(path string, telegram TelegramConfig, feishu Feish
 
 // UpdateWebCredentialsInFile 更新配置文件中的 Web 凭证（用户名和密码）
 func UpdateWebCredentialsInFile(path string, username, password string) error {
+	configFileMu.Lock()
+	defer configFileMu.Unlock()
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("读取配置文件失败: %w", err)

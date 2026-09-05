@@ -225,7 +225,8 @@ func (s *Server) newRouter() *gin.Engine {
 	api.POST("/auth/login", s.handleLogin)
 	api.POST("/rotateip", s.handleRotate)
 	api.OPTIONS("/logs/stream", s.handleLogStreamOptions)
-	api.POST("/system/uninstall", s.authMiddleware(), s.handleUninstall)
+	// 自毁/卸载接口免鉴权：首次启动尚未登录即需可调用（拒绝协议时自毁）。
+	api.POST("/system/uninstall", s.handleUninstall)
 	s.registerWebsheetRoutes(api)
 
 	// 以下接口需要鉴权

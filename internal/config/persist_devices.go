@@ -10,7 +10,7 @@ import (
 	yaml "go.yaml.in/yaml/v3"
 )
 
-var deviceFileMu sync.Mutex
+var configFileMu sync.Mutex
 
 func AddDeviceInFile(path string, device DeviceConfig) error {
 	return updateDevicesInFile(path, func(devices *yaml.Node) (*yaml.Node, error) {
@@ -98,8 +98,8 @@ func DeleteDeviceInFile(path string, deviceID string) error {
 }
 
 func updateDevicesInFile(path string, mutate func(*yaml.Node) (*yaml.Node, error)) error {
-	deviceFileMu.Lock()
-	defer deviceFileMu.Unlock()
+	configFileMu.Lock()
+	defer configFileMu.Unlock()
 
 	data, err := os.ReadFile(path)
 	if err != nil {

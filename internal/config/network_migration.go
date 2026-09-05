@@ -48,7 +48,16 @@ func migrateLegacyManagedNetworkField(path string) error {
 			continue
 		}
 		if getMapValue(item, managedNetworkKey) == nil {
-			setMapBool(item, managedNetworkKey, false)
+			// 旧字段 disable_network=true 表示"禁用网络"；
+			// 迁移到 network_enabled（启用网络）时必须取反：
+			// disable_network=true  → network_enabled=false（仍禁用）
+			// disable_network=false → network_enabled=true（启用）
+			legacy := getMapValue(item, legacyManagedNetworkKey)
+			networkEnabled := true
+			if legacy != nil && legacy.Kind == yaml.ScalarNode && legacy.Value == "true" {
+				networkEnabled = false
+			}
+			setMapBool(item, managedNetworkKey, networkEnabled)
 		}
 		deleteMapKey(item, legacyManagedNetworkKey)
 		changed = true
