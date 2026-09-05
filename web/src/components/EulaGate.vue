@@ -90,33 +90,20 @@ async function rejectAndUninstall() {
     </div>
   </div>
 
-  <!-- 协议弹窗：VoHive 主题色深色渐变遮罩（teal → cyan → indigo） -->
+  <!-- 协议弹窗：深色遮罩背景 -->
   <div
     v-else-if="visible"
-    class="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-gradient-to-br from-teal-900/90 via-cyan-900/90 to-indigo-950/90 p-4"
+    class="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-slate-900/80 p-4"
   >
     <div
       class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-2xl dark:border-slate-700/60 dark:bg-[#1a1a20]"
     >
-      <!-- 顶部品牌图标：VoHive 品牌色 teal + 三角警告 -->
+      <!-- 卡片顶部装饰渐变条（teal → 绿 → 黄） -->
+      <div class="h-2.5 w-full bg-gradient-to-r from-cyan-400 via-green-400 to-yellow-300"></div>
+      <!-- 顶部品牌图标：VoHive 应用图标样式（teal 圆形 + 白色 V），按你提供的图标配色 -->
       <div class="flex justify-center px-8 pt-8 pb-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-teal-500 shadow-lg shadow-teal-500/30">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-white"
-          >
-            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-            <path d="M12 9v4" />
-            <path d="M12 17h.01" />
-          </svg>
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-teal-500 shadow-lg shadow-teal-500/30">
+          <span class="text-3xl font-bold text-white">V</span>
         </div>
       </div>
 
