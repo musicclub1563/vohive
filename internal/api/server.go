@@ -69,6 +69,7 @@ type Server struct {
 	fullCfg     *config.Config      // 完整配置引用
 	pool        *device.Pool        // 设备工作器池
 	auth        config.WebConfig    // Web 认证配置
+	authMu      sync.RWMutex        // 保护 auth 的并发读写（改密 vs 登录/token 校验）
 	fs          http.FileSystem     // 静态文件系统
 	configPath  string              // 配置文件路径
 	proxyMgr    *server.Manager     // 代理实例管理器
@@ -140,7 +141,7 @@ func (s *Server) issueSessionToken() (string, time.Time, error) {
 	exp := time.Now().Add(30 * 24 * time.Hour) // 有效期 30 天
 	expStr := strconv.FormatInt(exp.Unix(), 10)
 
-	h := hmac.New(sha256.New, []byte(s.auth.Password))
+	h := hmac.New(sha256.New, []byte(s.authPassword()))
 	h.Write([]byte(expStr))
 	sig := hex.EncodeToString(h.Sum(nil))
 
@@ -1869,6 +1870,27 @@ func (s *Server) handleDeleteSMSThread(c *gin.Context) {
 
 // ---------------- 鉴权与静态服务 ----------------
 
+// authPassword 在读写锁保护下读取当前密码哈希，避免与 handleChangePassword 的写入产生数据竞争。
+func (s *Server) authPassword() string {
+	s.authMu.RLock()
+	defer s.authMu.RUnlock()
+	return s.auth.Password
+}
+
+// authUsername 读取当前用户名（用户名从不修改，加读锁仅为与密码访问保持一致）。
+func (s *Server) authUsername() string {
+	s.authMu.RLock()
+	defer s.authMu.RUnlock()
+	return s.auth.Username
+}
+
+// setAuthPassword 在写锁保护下更新密码哈希。
+func (s *Server) setAuthPassword(p string) {
+	s.authMu.Lock()
+	s.auth.Password = p
+	s.authMu.Unlock()
+}
+
 func (s *Server) handleLogin(c *gin.Context) {
 	var req struct {
 		Username string `json:"username"`
@@ -1890,7 +1912,7 @@ func (s *Server) handleLogin(c *gin.Context) {
 		return
 	}
 
-	if req.Username == s.auth.Username && checkPassword(s.auth.Password, req.Password) {
+	if req.Username == s.authUsername() && checkPassword(s.authPassword(), req.Password) {
 		token, exp, err := s.issueSessionToken()
 		if err != nil {
 			logger.Error("生成登录 token 失败", "err", err)
@@ -1933,7 +1955,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	}
 
 	// 校验当前密码
-	if !checkPassword(s.auth.Password, req.OldPassword) {
+	if !checkPassword(s.authPassword(), req.OldPassword) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"code":    "invalid_password",
@@ -1975,7 +1997,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	hashedPassword := string(hashed)
 
 	// 持久化到配置文件
-	if err := config.UpdateWebCredentialsInFile(s.configPath, s.auth.Username, hashedPassword); err != nil {
+	if err := config.UpdateWebCredentialsInFile(s.configPath, s.authUsername(), hashedPassword); err != nil {
 		logger.Error("更新密码配置失败", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -1985,9 +2007,9 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	}
 
 	// 更新内存中的密码（已哈希）
-	s.auth.Password = hashedPassword
+	s.setAuthPassword(hashedPassword)
 
-	logger.Info("密码已更新", "username", s.auth.Username, "ip", c.ClientIP())
+	logger.Info("密码已更新", "username", s.authUsername(), "ip", c.ClientIP())
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "ok",
 		"message": "密码已更新",
@@ -2036,7 +2058,7 @@ func (s *Server) authorizeRotate(c *gin.Context, username string, password strin
 		return false
 	}
 
-	if username == s.auth.Username && checkPassword(s.auth.Password, password) {
+	if username == s.authUsername() && checkPassword(s.authPassword(), password) {
 		return true
 	}
 
@@ -2068,7 +2090,7 @@ func (s *Server) isSessionTokenValid(token string, now time.Time) bool {
 		return false
 	}
 
-	h := hmac.New(sha256.New, []byte(s.auth.Password))
+	h := hmac.New(sha256.New, []byte(s.authPassword()))
 	h.Write([]byte(expStr))
 	expectedSig := hex.EncodeToString(h.Sum(nil))
 

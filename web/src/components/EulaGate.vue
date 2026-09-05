@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { systemService } from '../services/system'
 import { errorMessage } from '../services/http'
 
@@ -55,21 +54,6 @@ function onPasteBlocked() {
 
 async function rejectAndUninstall() {
   if (uninstalling.value) return
-  try {
-    await ElMessageBox.confirm(
-      '确定要拒绝本协议并卸载吗？此操作将删除本软件、停止服务且无法撤销。',
-      '拒绝并卸载',
-      {
-        confirmButtonText: '确定卸载',
-        cancelButtonText: '我再想想',
-        type: 'warning',
-        confirmButtonClass: 'el-button--danger',
-      }
-    )
-  } catch {
-    // 用户取消二次确认，不触发卸载
-    return
-  }
   uninstalling.value = true
   errorMsg.value = ''
   const res = await systemService.uninstall()
@@ -88,7 +72,7 @@ async function rejectAndUninstall() {
   <!-- 卸载完成：全屏黑屏 + 红色三角警告 -->
   <div
     v-if="uninstallDone"
-    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black"
+    class="fixed inset-0 z-[1000] flex items-center justify-center bg-black"
   >
     <div class="text-center">
       <svg
@@ -114,7 +98,7 @@ async function rejectAndUninstall() {
   <!-- 协议弹窗：深色遮罩背景 -->
   <div
     v-else-if="visible"
-    class="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-slate-900/80 p-4"
+    class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-slate-900/80 p-4"
   >
     <div
       class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-2xl dark:border-slate-700/60 dark:bg-[#1a1a20]"

@@ -101,7 +101,7 @@ func (s *Server) handleProxyInstanceGet(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "实例不存在: " + id})
 		return
 	}
-	c.JSON(http.StatusOK, instanceToDTO(*inst, false))
+	c.JSON(http.StatusOK, instanceToDTO(*inst, true))
 }
 
 // handleProxyUpdateConfig 更新代理配置
