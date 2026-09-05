@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ListSkeleton from '../components/ListSkeleton.vue'
 import ErrorState from '../components/ErrorState.vue'
 import { usePollingScheduler } from '../composables/usePollingScheduler'
-import { useProxyStore } from '../stores/proxy'
 import { useUpstreamProxyStore } from '../stores/upstream-proxy'
-import type { ProxyInstance, ProxyDevice, ProxyMode, UpstreamProxy, UpstreamProxyCountry } from '../types/api'
+import type { UpstreamProxy, UpstreamProxyCountry } from '../types/api'
 import { toAppError } from '../services/http'
 import {
   upstreamProxyAddressWarning,
@@ -27,166 +25,7 @@ import {
 const activeTab = ref('upstream') // 默认展示前置代理
 
 // ══════════════════════════════════════════════════════
-// 出站代理（原有逻辑，不动）
-// ══════════════════════════════════════════════════════
-const proxyStore = useProxyStore()
-const { statusMap } = storeToRefs(proxyStore)
-
-const initialLoading = ref(true)
-const refreshing = ref(false)
-const loadError = ref<{ message: string; status?: number } | null>(null)
-const instances = ref<ProxyInstance[]>([])
-const devices = ref<ProxyDevice[]>([])
-const saving = ref(false)
-
-const drawerOpen = ref(false)
-const editingInstance = ref<ProxyInstance | null>(null)
-const instanceForm = ref<ProxyInstance>({
-  id: '',
-  name: '',
-  device_id: '',
-  enabled: true,
-  mode: 'socks5',
-  listen_addr: '0.0.0.0',
-  listen_port: 1080,
-  auth_enabled: false,
-  username: '',
-  password: ''
-})
-
-const modeOptions: Array<{ label: string; value: ProxyMode }> = [
-  { label: 'SOCKS5', value: 'socks5' },
-  { label: 'HTTP', value: 'http' }
-]
-
-
-
-watch(
-  () => instanceForm.value.auth_enabled,
-  (enabled) => {
-    if (!enabled) {
-      instanceForm.value.username = ''
-      instanceForm.value.password = ''
-    }
-  }
-)
-
-async function fetchOverview(opts: { silent?: boolean; initial?: boolean } = {}) {
-  const isInitial = opts.initial === true
-  const silent = opts.silent === true
-  if (isInitial) {
-    initialLoading.value = true
-  } else if (!silent) {
-    refreshing.value = true
-  }
-  loadError.value = null
-
-  try {
-    const result = await proxyStore.fetchOverview()
-    if (!result.ok) throw new Error(result.error.message)
-    instances.value = proxyStore.instances.map((inst) => ({
-      ...inst,
-      mode: inst.mode || 'socks5'
-    }))
-    devices.value = proxyStore.devices
-  } catch (e: unknown) {
-    const err = toAppError(e)
-    loadError.value = {
-      message: err.message || '加载代理配置失败',
-      status: err.status
-    }
-  } finally {
-    if (isInitial) {
-      initialLoading.value = false
-    } else if (!silent) {
-      refreshing.value = false
-    }
-  }
-}
-
-async function saveConfig() {
-  saving.value = true
-  try {
-    const result = await proxyStore.saveConfig(instances.value)
-    if (!result.ok) throw new Error(result.error.message || '保存失败')
-    ElMessage.success('配置已保存')
-    await fetchOverview()
-  } catch (e: unknown) {
-    const err = toAppError(e)
-    ElMessage.error(err.message || '保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-
-
-
-
-function saveForm() {
-  const form = { ...instanceForm.value }
-
-  if (!form.id) {
-    ElMessage.warning('实例 ID 不能为空')
-    return
-  }
-  if (!form.device_id) {
-    ElMessage.warning('必须绑定设备')
-    return
-  }
-  if (form.mode !== 'socks5' && form.mode !== 'http') {
-    ElMessage.warning('代理模式仅支持 SOCKS5 或 HTTP')
-    return
-  }
-  if (form.listen_port <= 0 || form.listen_port > 65535) {
-    ElMessage.warning('监听端口无效')
-    return
-  }
-  if (!form.listen_addr) {
-    form.listen_addr = '0.0.0.0'
-  }
-
-  if (form.auth_enabled) {
-    form.username = (form.username || '').trim()
-    form.password = (form.password || '').trim()
-    if (!form.username || !form.password) {
-      ElMessage.warning('启用认证时必须填写用户名和密码')
-      return
-    }
-  } else {
-    form.username = ''
-    form.password = ''
-  }
-
-  if (editingInstance.value) {
-    const idx = instances.value.findIndex((i) => i.id === editingInstance.value!.id)
-    if (idx >= 0) {
-      instances.value[idx] = form
-    }
-  } else {
-    if (instances.value.some((i) => i.id === form.id)) {
-      ElMessage.warning('实例 ID 已存在')
-      return
-    }
-    instances.value.push(form)
-  }
-
-  drawerOpen.value = false
-  saveConfig()
-}
-
-
-
-const pollEnabled = computed(() => !initialLoading.value && instances.value.length > 0)
-usePollingScheduler(() => fetchOverview({ silent: true }), 5000, {
-  enabled: pollEnabled,
-  maxIntervalMs: 60000,
-  backgroundIntervalMs: 15000
-})
-
-
-// ══════════════════════════════════════════════════════
-// 前置代理（新增逻辑）
+// 前置代理（漫游前置代理）
 // ══════════════════════════════════════════════════════
 const upstreamStore = useUpstreamProxyStore()
 
@@ -389,7 +228,6 @@ function formatCountryLabel(country: UpstreamProxyCountry): string {
 
 // ── 统一初始化 ──
 onMounted(() => {
-  fetchOverview({ initial: true })
   fetchUpstream({ initial: true })
 })
 
@@ -508,102 +346,6 @@ usePollingScheduler(() => fetchUpstream({ silent: true }), 10000, {
         </div>
       </div>
     </div>
-
-    
-
-    <!-- ═══════════ 出站代理编辑 Drawer ═══════════ -->
-    <el-drawer v-model="drawerOpen" :title="editingInstance ? '编辑代理实例' : '新增代理实例'" size="560px">
-      <div class="space-y-6 pb-6">
-        <div class="space-y-4">
-          <div class="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <div class="w-1 h-4 bg-indigo-500 rounded-full"></div>
-            <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">基础设置</h3>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">实例 ID</label>
-              <el-input v-model="instanceForm.id" :disabled="!!editingInstance" placeholder="唯一标识" />
-            </div>
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">名称</label>
-              <el-input v-model="instanceForm.name" placeholder="显示名称" />
-            </div>
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">绑定设备（必填）</label>
-            <el-select v-model="instanceForm.device_id" placeholder="选择设备" class="w-full">
-              <el-option v-for="d in devices" :key="d.id" :label="`${d.name} (${d.interface})`" :value="d.id" />
-            </el-select>
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">代理模式</label>
-            <el-select v-model="instanceForm.mode" placeholder="选择代理模式" class="w-full">
-              <el-option
-                v-for="opt in modeOptions"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
-            </el-select>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">监听地址</label>
-              <el-input v-model="instanceForm.listen_addr" placeholder="0.0.0.0" />
-            </div>
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">监听端口</label>
-              <el-input-number v-model="instanceForm.listen_port" :min="1" :max="65535" class="!w-full" />
-            </div>
-          </div>
-
-          <div class="ui-panel-muted p-3 flex items-center justify-between rounded-lg">
-            <div>
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">启用实例</div>
-              <div class="text-xs text-gray-500">禁用后实例不会自动启动</div>
-            </div>
-            <el-switch v-model="instanceForm.enabled" />
-          </div>
-        </div>
-
-        <div class="space-y-4">
-          <div class="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <div class="w-1 h-4 bg-amber-500 rounded-full"></div>
-            <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">认证设置</h3>
-          </div>
-
-          <div class="ui-panel-muted p-3 flex items-center justify-between rounded-lg">
-            <div>
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">启用账号认证</div>
-              <div class="text-xs text-gray-500">关闭后将允许免认证连接</div>
-            </div>
-            <el-switch v-model="instanceForm.auth_enabled" />
-          </div>
-
-          <div v-if="instanceForm.auth_enabled" class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">用户名</label>
-              <el-input v-model="instanceForm.username" placeholder="例如 user01" />
-            </div>
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">密码</label>
-              <el-input v-model="instanceForm.password" type="password" show-password placeholder="请输入密码" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex items-center justify-end gap-2">
-          <el-button @click="drawerOpen = false">取消</el-button>
-          <el-button type="primary" @click="saveForm">保存</el-button>
-        </div>
-      </template>
-    </el-drawer>
 
     <!-- ═══════════ 前置代理编辑 Drawer ═══════════ -->
     <el-drawer v-model="upstreamDrawerOpen" :title="editingUpstream ? '编辑前置代理' : '新增前置代理'" size="520px">
