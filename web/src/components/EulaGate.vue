@@ -47,6 +47,11 @@ function accept() {
   visible.value = false
 }
 
+// 禁止复制粘贴示例文案，强制用户手动输入以确认已阅读协议。
+function onPasteBlocked() {
+  errorMsg.value = '为保证您已阅读本协议，不支持复制粘贴，请手动输入「我同意并确认」'
+}
+
 async function rejectAndUninstall() {
   if (uninstalling.value) return
   uninstalling.value = true
@@ -132,8 +137,10 @@ async function rejectAndUninstall() {
         <input
           v-model="confirmText"
           type="text"
-          placeholder="请输入：我同意并确认"
+          placeholder="请手动输入：我同意并确认（不支持复制粘贴）"
           class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-center text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          @paste.prevent="onPasteBlocked"
+          @drop.prevent="onPasteBlocked"
         />
         <p v-if="errorMsg" class="text-center text-xs text-red-500">{{ errorMsg }}</p>
         <div class="flex items-center justify-center gap-3 pt-1">
@@ -148,7 +155,7 @@ async function rejectAndUninstall() {
             :disabled="!canAccept"
             :class="
               canAccept
-                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow'
+                ? 'bg-teal-600 text-white hover:bg-teal-500 shadow'
                 : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
             "
             class="rounded-lg px-5 py-2 text-sm font-medium disabled:cursor-not-allowed"
