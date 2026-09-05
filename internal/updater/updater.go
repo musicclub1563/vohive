@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -234,15 +235,11 @@ func ApplyUpdate() error {
 
 	logger.Info("应用更新成功，正在准备重启...")
 
-	// 延迟退出以便接口能返回成功响应
+	// 延迟退出以便接口能返回成功响应，随后触发服务重启使新二进制生效。
 	go func() {
 		time.Sleep(2 * time.Second)
-		logger.Info("进程发出关闭信号以应用更新")
-		if process, err := os.FindProcess(os.Getpid()); err == nil {
-			process.Signal(syscall.SIGTERM)
-		} else {
-			os.Exit(0)
-		}
+		logger.Info("应用更新成功，正在重启服务以加载新版本")
+		restartService()
 	}()
 
 	return nil
@@ -279,4 +276,27 @@ func extractBinaryFromTarXZ(r io.Reader, wantName string) ([]byte, error) {
 		return data, nil
 	}
 	return nil, fmt.Errorf("binary %q not found in archive", wantName)
+}
+
+// restartService 在自我替换完成后触发服务重启，使新二进制生效。
+// 优先调用 systemctl 显式重启（通过 systemd IPC，不依赖 Restart= 配置），
+// 非 systemd 环境（如 OpenWrt procd）或 systemctl 不可用时，回退为向自身
+// 发送 SIGTERM，由服务管理器的 respawn 机制重新拉起。
+func restartService() {
+	bin, err := exec.LookPath("systemctl")
+	if err == nil {
+		out, err := exec.Command(bin, "is-active", "vohive").CombinedOutput()
+		if err == nil && strings.TrimSpace(string(out)) == "active" {
+			// 交给 systemd 显式重启：systemd 会终止当前（旧）进程并启动新二进制。
+			// 这里只负责触发，随后本进程会被 systemd 发出的停止信号终止；
+			// 若长时间未被终止，末尾的 SIGTERM 兜底逻辑仍会生效。
+			_ = exec.Command(bin, "restart", "vohive").Start()
+			time.Sleep(10 * time.Second)
+		}
+	}
+	if p, err := os.FindProcess(os.Getpid()); err == nil {
+		_ = p.Signal(syscall.SIGTERM)
+	} else {
+		os.Exit(1)
+	}
 }
