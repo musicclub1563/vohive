@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { systemService } from '../services/system'
 import { errorMessage } from '../services/http'
 
@@ -54,6 +55,21 @@ function onPasteBlocked() {
 
 async function rejectAndUninstall() {
   if (uninstalling.value) return
+  try {
+    await ElMessageBox.confirm(
+      '确定要拒绝本协议并卸载吗？此操作将删除本软件、停止服务且无法撤销。',
+      '拒绝并卸载',
+      {
+        confirmButtonText: '确定卸载',
+        cancelButtonText: '我再想想',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger',
+      }
+    )
+  } catch {
+    // 用户取消二次确认，不触发卸载
+    return
+  }
   uninstalling.value = true
   errorMsg.value = ''
   const res = await systemService.uninstall()
