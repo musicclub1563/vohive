@@ -31,7 +31,9 @@ ProtectKernelLogs=true
 ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
-ReadWritePaths=/opt/vohive/data /opt/vohive/logs /etc/vohive
+# /opt/vohive/bin 需可写，以便内置自更新(selfupdate)在该目录就地重写可执行文件；
+# ProtectSystem=strict 默认将整个文件系统置为只读，这里显式放开二进制目录。
+ReadWritePaths=/opt/vohive/bin /opt/vohive/data /opt/vohive/logs /etc/vohive
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
 RestrictRealtime=true
 LockPersonality=true
