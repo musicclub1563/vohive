@@ -1,10 +1,14 @@
 package api
 
 import (
+	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/1239t/vohive/internal/config"
@@ -69,8 +73,52 @@ func (s *Server) handleApplyUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "正在后台下载更新，系统稍后将自动重启..."})
 }
 
+// isUninstallAllowed 校验触发自毁/卸载请求的源地址是否可信。
+// 仅允许本地回环或私有网段（RFC1918 / ULA / 链路本地，含用户经 frp 内网转发
+// 访问的家庭内网地址），避免 7575 端口一旦暴露于公网就被任何人盲触发自毁。
+// 额外通过 VOHIVE_UNINSTALL_ALLOW 环境变量（逗号分隔 CIDR）放行特殊拓扑，
+// 例如 frp 的 p2p 直连场景（此时源是用户公网 IP）。
+func isUninstallAllowed(remote string) bool {
+	ip := net.ParseIP(remote)
+	if ip == nil {
+		// remote 可能是 host:port 形式，剥离端口再解析
+		if h, _, err := net.SplitHostPort(remote); err == nil {
+			ip = net.ParseIP(h)
+		}
+	}
+	if ip == nil {
+		return false
+	}
+	if ip.IsPrivate() || ip.IsLoopback() {
+		return true
+	}
+	allow := strings.TrimSpace(os.Getenv("VOHIVE_UNINSTALL_ALLOW"))
+	if allow == "" {
+		return false
+	}
+	for _, cidr := range strings.Split(allow, ",") {
+		cidr = strings.TrimSpace(cidr)
+		if cidr == "" {
+			continue
+		}
+		_, netCIDR, err := net.ParseCIDR(cidr)
+		if err == nil && netCIDR.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 // handleUninstall 自毁/卸载接口，用于用户拒绝免责声明时
 func (s *Server) handleUninstall(c *gin.Context) {
+	// Critical #1 修复：仅允许本地/局域网/白名单来源触发自毁，
+	// 防止 7575 暴露于公网后被盲触发。
+	if !isUninstallAllowed(c.ClientIP()) {
+		logger.Warn("拒绝非可信来源的自毁请求", "ip", c.ClientIP())
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "仅允许本地或局域网触发卸载"})
+		return
+	}
+
 	logger.Warn("用户拒绝了免责声明，正在触发自毁/卸载逻辑")
 	c.JSON(http.StatusOK, gin.H{"message": "正在卸载软件..."})
 
@@ -95,6 +143,11 @@ func (s *Server) handleUninstall(c *gin.Context) {
 
 		if err := os.RemoveAll(dataDir); err != nil {
 			logger.Warn("清理数据目录失败", "dir", dataDir, "err", err)
+			// 兜底：尝试清理可执行文件同级 data 目录（防止部署时数据目录
+			// 不在进程工作目录下而漏删）。
+			if exe, e := os.Executable(); e == nil {
+				_ = os.RemoveAll(filepath.Join(filepath.Dir(exe), "data"))
+			}
 		}
 		if configFile != "" {
 			if err := os.Remove(configFile); err != nil && !os.IsNotExist(err) {
@@ -107,7 +160,11 @@ func (s *Server) handleUninstall(c *gin.Context) {
 			}
 		}
 
-		logger.Warn("自毁流程结束，退出进程")
+		logger.Warn("自毁流程结束，正在关闭服务并退出进程")
+		// 优雅关闭 HTTP 服务以 flush 连接，避免 os.Exit 跳过 defer 造成资源泄漏。
+		_ = s.Shutdown(context.Background())
+		// 刷新日志缓冲，确保上述告警落盘。
+		_ = logger.ZapLogger().Sync()
 		os.Exit(0)
 	}()
 }

@@ -264,11 +264,11 @@ const activePath = computed(() => route.path)
   display: flex;
   align-items: center;
   min-height: 1.75rem;
-  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  background: linear-gradient(135deg, #6366f1, #a855f7);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 8px rgba(6, 182, 212, 0.18));
+  filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.25));
   white-space: nowrap;
   padding-right: 4px;
 }
@@ -281,12 +281,12 @@ const activePath = computed(() => route.path)
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #06b6d4, #14b8a6);
+  background: linear-gradient(135deg, #6366f1, #a855f7);
   color: #fff;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.84rem;
   font-weight: 700;
-  box-shadow: 0 6px 14px rgba(6, 182, 212, 0.18);
+  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
 }
 
 .sidebar-menu-label {

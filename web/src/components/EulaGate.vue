@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { systemService } from '../services/system'
 import { errorMessage } from '../services/http'
 
@@ -54,6 +55,21 @@ function onPasteBlocked() {
 
 async function rejectAndUninstall() {
   if (uninstalling.value) return
+  try {
+    await ElMessageBox.confirm(
+      '确定要拒绝本协议并卸载吗？此操作将删除本软件、停止服务且无法撤销。',
+      '拒绝并卸载',
+      {
+        confirmButtonText: '确定卸载',
+        cancelButtonText: '我再想想',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger',
+      }
+    )
+  } catch {
+    // 用户取消二次确认，不触发卸载
+    return
+  }
   uninstalling.value = true
   errorMsg.value = ''
   const res = await systemService.uninstall()
@@ -103,12 +119,26 @@ async function rejectAndUninstall() {
     <div
       class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-2xl dark:border-slate-700/60 dark:bg-[#1a1a20]"
     >
-      <!-- 卡片顶部装饰渐变条（teal → 绿 → 黄） -->
-      <div class="h-2.5 w-full bg-gradient-to-r from-cyan-400 via-green-400 to-yellow-300"></div>
-      <!-- 顶部品牌图标：VoHive 应用图标样式（teal 圆形 + 白色 V），按你提供的图标配色 -->
+
+      <!-- 顶部品牌图标：VoHive 紫色品牌色 + 白色三角警告 -->
       <div class="flex justify-center px-8 pt-8 pb-3">
-        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-teal-500 shadow-lg shadow-teal-500/30">
-          <span class="text-3xl font-bold text-white">V</span>
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="text-white"
+          >
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
         </div>
       </div>
 
@@ -117,11 +147,11 @@ async function rejectAndUninstall() {
         <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">VoHive 最终用户许可与免责声明</h2>
       </div>
 
-      <!-- 条款：每条带蓝色数字徽章 + 关键词加粗红色 -->
+      <!-- 条款：每条带紫色数字徽章 + 关键词加粗红色 -->
       <div class="space-y-3 overflow-y-auto px-8 py-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
         <div v-for="(c, i) in clauses" :key="i" class="flex gap-3">
           <div
-            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300"
+            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
           >
             {{ i + 1 }}
           </div>
@@ -138,7 +168,7 @@ async function rejectAndUninstall() {
           v-model="confirmText"
           type="text"
           placeholder="请手动输入：我同意并确认（不支持复制粘贴）"
-          class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-center text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-center text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
           @paste.prevent="onPasteBlocked"
           @drop.prevent="onPasteBlocked"
         />
@@ -155,7 +185,7 @@ async function rejectAndUninstall() {
             :disabled="!canAccept"
             :class="
               canAccept
-                ? 'bg-teal-600 text-white hover:bg-teal-500 shadow'
+                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow'
                 : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
             "
             class="rounded-lg px-5 py-2 text-sm font-medium disabled:cursor-not-allowed"
