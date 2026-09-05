@@ -184,6 +184,10 @@ func ApplyUpdate() error {
 	logger.Info("开始下载更新", "url", downloadURL)
 
 	// 下载二进制。私有仓库的 Release 资产下载也需要令牌鉴权。
+	// 使用独立的下载客户端并放宽超时：归档体积较大且可能处于慢速网络，
+	// 原先与查询复用的 15s 超时会在流式解压读取 body 时触发
+	// "context deadline exceeded (Client.Timeout ...)" 导致更新失败。
+	dlClient := &http.Client{Timeout: 10 * time.Minute}
 	dlReq, err := http.NewRequest(http.MethodGet, downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create download request: %w", err)
@@ -193,7 +197,7 @@ func ApplyUpdate() error {
 		dlReq.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	dlResp, err := client.Do(dlReq)
+	dlResp, err := dlClient.Do(dlReq)
 	if err != nil {
 		return fmt.Errorf("failed to download update: %w", err)
 	}
@@ -203,9 +207,17 @@ func ApplyUpdate() error {
 		return fmt.Errorf("download failed with status %d", dlResp.StatusCode)
 	}
 
+	// 先把整个归档读入内存，再解压提取二进制。这样解压阶段不再依赖
+	// 网络连接，避免慢速网络下读取 body 中途被判定为超时。
+	const maxArchiveSize = 300 * 1024 * 1024
+	archiveData, err := io.ReadAll(io.LimitReader(dlResp.Body, maxArchiveSize))
+	if err != nil {
+		return fmt.Errorf("failed to read update archive: %w", err)
+	}
+
 	// Release 资产是 .tar.xz 归档，而 selfupdate 需要解压后的原始二进制。
 	// 先解压归档并提取名为 "vohive" 的可执行文件，再交给 selfupdate 做原子替换。
-	binData, err := extractBinaryFromTarXZ(dlResp.Body, "vohive")
+	binData, err := extractBinaryFromTarXZ(bytes.NewReader(archiveData), "vohive")
 	if err != nil {
 		return fmt.Errorf("failed to extract binary from archive: %w", err)
 	}
