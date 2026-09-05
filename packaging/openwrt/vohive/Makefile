@@ -6,11 +6,11 @@ PKG_RELEASE:=1
 
 PKG_LICENSE:=PolyForm-Noncommercial-1.0.0
 PKG_LICENSE_FILES:=LICENSE
-PKG_MAINTAINER:=1239t <https://github.com/1239t/vohive>
+PKG_MAINTAINER:=musicclub1563 <https://github.com/musicclub1563/vohive>
 PKG_DESCR:=面向高通 4G/LTE/5G 模组的综合管理与代理服务平台
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/1239t/vohive.git
+PKG_SOURCE_URL:=https://github.com/musicclub1563/vohive.git
 PKG_SOURCE_VERSION:=master
 PKG_MIRROR_HASH:=skip
 
@@ -34,7 +34,7 @@ define Package/vohive
   CATEGORY:=Network
   SUBMENU:=Telephony
   TITLE:=VoHive modem management and proxy service
-  URL:=https://github.com/1239t/vohive
+  URL:=https://github.com/musicclub1563/vohive
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-usb-serial-option +kmod-usb-net-qmi-wwan \
            +usbutils +ip-full +ca-certificates +zoneinfo-asia
   USERID:=vohive:vohive
