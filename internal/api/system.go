@@ -57,6 +57,11 @@ func (s *Server) handleCheckUpdate(c *gin.Context) {
 // handleApplyUpdate 应用系统更新
 func (s *Server) handleApplyUpdate(c *gin.Context) {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("应用更新过程中发生异常", "panic", r)
+			}
+		}()
 		if err := updater.ApplyUpdate(); err != nil {
 			logger.Error("应用更新失败", "err", err)
 		}

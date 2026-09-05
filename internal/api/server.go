@@ -225,7 +225,7 @@ func (s *Server) newRouter() *gin.Engine {
 	api.POST("/auth/login", s.handleLogin)
 	api.POST("/rotateip", s.handleRotate)
 	api.OPTIONS("/logs/stream", s.handleLogStreamOptions)
-	api.POST("/system/uninstall", s.handleUninstall)
+	api.POST("/system/uninstall", s.authMiddleware(), s.handleUninstall)
 	s.registerWebsheetRoutes(api)
 
 	// 以下接口需要鉴权

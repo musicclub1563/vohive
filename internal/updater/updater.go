@@ -288,12 +288,14 @@ func restartService() {
 		out, err := exec.Command(bin, "is-active", "vohive").CombinedOutput()
 		if err == nil && strings.TrimSpace(string(out)) == "active" {
 			// 交给 systemd 显式重启：systemd 会终止当前（旧）进程并启动新二进制。
-			// 这里只负责触发，随后本进程会被 systemd 发出的停止信号终止；
-			// 若长时间未被终止，末尾的 SIGTERM 兜底逻辑仍会生效。
+			// 触发后直接退出本进程即可，systemd 已负责拉起新版本；
+			// 不再向自身额外发送 SIGTERM，避免旧进程退出后 PID 被复用导致误杀其它进程。
 			_ = exec.Command(bin, "restart", "vohive").Start()
-			time.Sleep(10 * time.Second)
+			os.Exit(0)
 		}
 	}
+	// 非 systemd 环境或 unit 未激活：回退为向自身发送 SIGTERM，
+	// 由服务管理器（如 OpenWrt procd）的 respawn 机制重新拉起。
 	if p, err := os.FindProcess(os.Getpid()); err == nil {
 		_ = p.Signal(syscall.SIGTERM)
 	} else {
