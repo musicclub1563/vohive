@@ -1,6 +1,6 @@
 [Unit]
 Description=VoHive cellular modem management and proxy service
-Documentation=https://github.com/1239t/vohive
+Documentation=https://github.com/musicclub1563/vohive
 After=network-online.target
 Wants=network-online.target
 
