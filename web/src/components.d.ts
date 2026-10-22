@@ -58,6 +58,7 @@ declare module 'vue' {
     EmptyState: typeof import('./components/EmptyState.vue')['default']
     ErrorBoundary: typeof import('./components/ErrorBoundary.vue')['default']
     ErrorState: typeof import('./components/ErrorState.vue')['default']
+    EulaGate: typeof import('./components/EulaGate.vue')['default']
     FieldRow: typeof import('./components/FieldRow.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     ListSkeleton: typeof import('./components/ListSkeleton.vue')['default']

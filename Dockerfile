@@ -5,7 +5,7 @@
 # slower and makes `npm ci` look like it hangs.
 
 # ---- Stage 1: build the web frontend once on the native builder ----
-FROM --platform=$BUILDPLATFORM node:20-alpine AS web-builder
+FROM --platform=$BUILDPLATFORM node:22-alpine AS web-builder
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -41,7 +41,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     -o /out/vohive ./cmd/vohive
 
 # ---- Stage 3: minimal runtime ----
-FROM alpine:3.20
+FROM alpine:3.24
 # ca-certificates : HTTPS (GitHub release checks, eSIM SM-DP+, notification webhooks)
 # iproute2        : ip/netlink management of wwan* modem interfaces
 # tzdata          : TZ support

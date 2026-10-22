@@ -2,8 +2,8 @@
 
 ## 环境要求
 
-- Go 1.26+（`go.mod` 中声明的版本，CI 使用 `go-version-file: go.mod` 自动匹配）
-- Node.js 20+ 与 npm
+- Go 1.27.3+（`go.mod` 中声明的 `toolchain` 版本；低于此版本会自动下载对应工具链）
+- Node.js 22+（或 20.19+）与 npm
 - Linux 主机（代码使用了 `SO_BINDTODEVICE`、`syscall.Kill` 等 Linux 专有接口，在 Windows/macOS 上 **`go build ./...` 会失败**）
 
 Windows 上做静态检查时请交叉编译目标平台：
